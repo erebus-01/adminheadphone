@@ -1,9 +1,13 @@
 import { Helmet } from 'react-helmet-async';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from "axios";
 // @mui
+import Accordion from '@mui/material/Accordion';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Card,
   Table,
@@ -40,7 +44,7 @@ import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import Label from '../components/label';
 import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
-import { URL } from '../utils/constant';
+import { URL, baseURL } from '../utils/constant';
 // sections
 import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
 // mock
@@ -99,7 +103,7 @@ function applySortFilter(array, comparator, query) {
   return stabilizedThis.map((el) => el[0]);
 }
 
-export default function UserPage() {
+export default function AddProductPage() {
   const [open, setOpen] = useState(null);
 
   const [page, setPage] = useState(0);
@@ -116,6 +120,16 @@ export default function UserPage() {
 
   const [openModal, setOpenModal] = useState(false);
 
+  const [products, setProducts] = useState([]); 
+  const [productId, setProductId] = useState([]); 
+  const [colors, setColors] = useState([]); 
+  const [users, setUsers] = useState([]); 
+
+  const [expanded, setExpanded] = useState(false);
+  const handleChange = (panelId) => (event, isExpanded) => {
+      setExpanded(isExpanded ? panelId : '');
+      console.log(panelId)
+    };
 
   const [form, setForm] = useState({})
 
@@ -126,19 +140,47 @@ export default function UserPage() {
     })
   }
 
-  const handleSubmitForm = async (e) => {
-    e.preventDefault();
-    const response = await fetch(`${URL}/user/register`, {
-      method: 'POST',
-      body: JSON.stringify(form),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    const data = await response.json()
-    console.log(data);
-  }
+  useEffect(() => {
+    // axios.get(`${baseURL}/products`).then((res) => {
+    //   setProducts(res.data); 
+    // })
+    // axios
+    // .all([
+    //   axios.get(`${baseURL}/products`),
+    //   axios.get(`${baseURL}/products/colors/${productId}`)
+    // ])
+    // .then(axios.spread((productsRes, colorsRes) => {
+    //   setProducts(productsRes.data);
+    //   setColors(colorsRes.data);
+    // }))
+    // .catch(error => {
+    //   console.error(error);
+    // });
+  }, [])
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get(`${baseURL}/products`);
+        setProducts(response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const loadProductColors = async (productID) => {
+    try {
+      const response = await axios.get(`${baseURL}/product/colors/${productID}`);
+      const colors = response.data;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // #region ui
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
 
@@ -154,7 +196,7 @@ export default function UserPage() {
     setOpen(event.currentTarget);
   };
 
-// #region ui
+
   const handleCloseMenu = () => {
     setOpen(null);
   };
@@ -167,7 +209,7 @@ export default function UserPage() {
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds = USERLIST.map((n) => n.name);
+      const newSelecteds = products.map((n) => n.name);
       setSelected(newSelecteds);
       return;
     }
@@ -203,9 +245,9 @@ export default function UserPage() {
     setFilterName(event.target.value);
   };
 
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - USERLIST.length) : 0;
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - products.length) : 0;
 
-  const filteredUsers = applySortFilter(USERLIST, getComparator(order, orderBy), filterName);
+  const filteredUsers = applySortFilter(products, getComparator(order, orderBy), filterName);
 
   const isNotFound = !filteredUsers.length && !!filterName;
   // #endregion
@@ -219,10 +261,10 @@ export default function UserPage() {
       <Container>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
           <Typography variant="h4" gutterBottom>
-            User
+            Product
           </Typography>
           <Button variant="contained" onClick={handleOpenModal} startIcon={<Iconify icon="eva:plus-fill" />}>
-            New User
+            New Product
           </Button>
         </Stack>
         <Modal
@@ -246,13 +288,13 @@ export default function UserPage() {
               <Typography id="transition-modal-description" sx={{ mt: 2 }}>
                 Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
               </Typography>
-              <form onSubmit={handleSubmitForm}>
-                <TextField fullWidth name='firstName' label="First Name" id="firstName" sx={{ mt: 2 }} onChange={handleForm} />
-                <TextField fullWidth name='lastName' label="Last Name" id="lastName" sx={{ mt: 2 }} onChange={handleForm} />
-                <TextField fullWidth name='email' label="Email" type='email' id="email" sx={{ mt: 2 }} onChange={handleForm} />
-                <TextField fullWidth name='username' label="Username" id="username" sx={{ mt: 2 }} onChange={handleForm} />
-                <TextField fullWidth name='password' label="Password" type='password' id="password" sx={{ mt: 2 }} onChange={handleForm} />
-                <TextField fullWidth name='cfpassword' label="Confirm Password" type='password' id="cfpassword" sx={{ mt: 2 }} onChange={handleForm} />
+              <form>
+                <TextField fullwidth="true" name='firstName' label="First Name" id="firstName" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullwidth="true" name='lastName' label="Last Name" id="lastName" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullwidth="true" name='email' label="Email" type='email' id="email" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullwidth="true" name='username' label="Username" id="username" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullwidth="true" name='password' label="Password" type='password' id="password" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullwidth="true" name='cfpassword' label="Confirm Password" type='password' id="cfpassword" sx={{ mt: 2 }} onChange={handleForm} />
                 <Grid container spacing={2} sx={{ mt: 2 }}>
                   <Grid item xs={4}>
                     <Button 
@@ -299,10 +341,10 @@ export default function UserPage() {
               <Typography id="transition-modal-description" sx={{ mt: 2 }}>
                 Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
               </Typography>
-              <TextField fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Last Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Email" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Username" id="fullWidth" sx={{ mt: 2 }} />
+              <TextField fullwidth="true" label="First Name" sx={{ mt: 2 }} />
+              <TextField fullwidth="true" label="Last Name"sx={{ mt: 2 }} />
+              <TextField fullwidth="true" label="Email" sx={{ mt: 2 }} />
+              <TextField fullwidth="true" label="Username" sx={{ mt: 2 }} />
               <Grid container spacing={2} sx={{ mt: 2 }}>
                 <Grid item xs={4}>
                   <Button 
@@ -354,93 +396,60 @@ export default function UserPage() {
           <UserListToolbar numSelected={selected.length} filterName={filterName} onFilterName={handleFilterByName} />
 
           <Scrollbar>
-            <TableContainer sx={{ minWidth: 800 }}>
-              <Table>
-                <UserListHead
-                  order={order}
-                  orderBy={orderBy}
-                  headLabel={TABLE_HEAD}
-                  rowCount={USERLIST.length}
-                  numSelected={selected.length}
-                  onRequestSort={handleRequestSort}
-                  onSelectAllClick={handleSelectAllClick}
-                />
-                <TableBody>
-                  {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                    const { id, name, role, status, company, avatarUrl, isVerified } = row;
-                    const selectedUser = selected.indexOf(name) !== -1;
+            {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+              const { _id, name, subtitles, image, description, benefit, price, colors } = row;
+              const selectedUser = selected.indexOf(name) !== -1;
 
-                    return (
-                      <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
-                        <TableCell padding="checkbox">
-                          <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
-                        </TableCell>
-
-                        <TableCell component="th" scope="row" padding="none">
-                          <Stack direction="row" alignItems="center" spacing={2}>
-                            <Avatar alt={name} src={avatarUrl} />
-                            <Typography variant="subtitle2" noWrap>
-                              {name}
-                            </Typography>
-                          </Stack>
-                        </TableCell>
-
-                        <TableCell align="left">{company}</TableCell>
-
-                        <TableCell align="left">{role}</TableCell>
-
-                        <TableCell align="left">{isVerified ? 'Yes' : 'No'}</TableCell>
-
-                        <TableCell align="left">
-                          <Label color={(status === 'banned' && 'error') || 'success'}>{sentenceCase(status)}</Label>
-                        </TableCell>
-
-                        <TableCell align="right">
-                          <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
-                            <Iconify icon={'eva:more-vertical-fill'} />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {emptyRows > 0 && (
-                    <TableRow style={{ height: 53 * emptyRows }}>
-                      <TableCell colSpan={6} />
-                    </TableRow>
-                  )}
-                </TableBody>
-
-                {isNotFound && (
-                  <TableBody>
-                    <TableRow>
-                      <TableCell align="center" colSpan={6} sx={{ py: 3 }}>
-                        <Paper
-                          sx={{
-                            textAlign: 'center',
-                          }}
-                        >
-                          <Typography variant="h6" paragraph>
-                            Not found
-                          </Typography>
-
-                          <Typography variant="body2">
-                            No results found for &nbsp;
-                            <strong>&quot;{filterName}&quot;</strong>.
-                            <br /> Try checking for typos or using complete words.
-                          </Typography>
-                        </Paper>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                )}
-              </Table>
-            </TableContainer>
+              return (
+                <Accordion fullwidth="true" key={_id} expanded={expanded === _id} onChange={handleChange(_id)} sx={{padding: 3}}>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel1bh-content"
+                    id="panel1bh-header"
+                  >
+                    {productId === _id}
+                    <img src={image} alt={name} loading="lazy" style={{ width: '7%', flexShrink: 0, borderRadius: 10, marginRight: 10 }} />
+                    <div style={{width: '80%', flexShrink: 0}}>
+                      <Typography sx={{  }}>
+                        {name}
+                      </Typography>
+                      <Typography sx={{ color: 'text.secondary' }}>{subtitles}</Typography>
+                    </div>
+                    <Typography>${price}</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <div>
+                      <ul style={{marginLeft: 30}}>
+                        {benefit.map((benefit, index) => (
+                          <li key={index}>{benefit}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    {colors}
+                    {colors.map((colorID, index) => {
+                      return (
+                        <ColorComponent
+                          key={index}
+                          colorID={_id}
+                          onLoadProductColors={loadProductColors}
+                        />
+                      );
+                    })}
+                  </AccordionDetails>
+                </Accordion>
+              );
+            })}
+            {emptyRows > 0 && (
+              <TableRow style={{ height: 53 * emptyRows }}>
+                <TableCell colSpan={6} />
+              </TableRow>
+            )}
           </Scrollbar>
 
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
-            count={USERLIST.length}
+            count={products.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -480,3 +489,38 @@ export default function UserPage() {
     </>
   );
 }
+
+const ColorComponent = ({ colorID, onLoadProductColors }) => {
+  const [colors, setColors] = useState([]);
+
+  useEffect(() => {
+    const fetchColors = async () => {
+      try {
+        const response = await axios.get(`${baseURL}/products/colors/${colorID}`);
+        const colorData = response.data.json;
+        setColors(colorData);
+        console.log(`${baseURL}/products/colors/${colorID}`)
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchColors();
+  }, [colorID]);
+
+  useEffect(() => {
+    if (colors.length > 0) {
+      onLoadProductColors(colors.map(color => color.product));
+    }
+  }, [colors, onLoadProductColors]);
+
+  return (
+    <div>
+      {colors.map((color) => (
+        <div key={color._id}>
+          <img src={color.images[0]} style={{width: '5%'}} alt={color.name} />
+        </div>
+      ))}
+    </div>
+  );
+};

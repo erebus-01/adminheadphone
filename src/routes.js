@@ -11,6 +11,7 @@ import AdminPage from './pages/AdminPage';
 import OrderPage from './pages/OrderPage';
 import ProductsPage from './pages/ProductsPage';
 import DashboardAppPage from './pages/DashboardAppPage';
+import AddProductPage from './pages/AddProductPage'
 
 // ----------------------------------------------------------------------
 
@@ -23,9 +24,10 @@ export default function Router() {
         { element: <Navigate to="/dashboard/app" />, index: true },
         { path: 'app', element: <DashboardAppPage /> },
         { path: 'user', element: <UserPage /> },
-        { path: 'products', element: <ProductsPage /> },
+        { path: 'products/exhibit', element: <ProductsPage /> },
         { path: 'blog', element: <BlogPage /> },
         { path: 'admin', element: <AdminPage /> },
+        { path: 'products', element: <AddProductPage /> },
         { path: 'order', element: <OrderPage /> },
       ],
     },

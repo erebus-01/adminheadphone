@@ -2,6 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios, { AxiosError } from 'axios';
 // @mui
 import {
@@ -41,6 +42,7 @@ import {
 } from '@mui/material';
 
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
+import EditIcon from '@mui/icons-material/Edit';
 // components
 import Label from '../components/label';
 import Iconify from '../components/iconify';
@@ -54,11 +56,12 @@ import USERLIST from '../_mock/user';
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-  { id: 'name', label: 'Name', alignRight: false },
-  { id: 'company', label: 'Company', alignRight: false },
-  { id: 'role', label: 'Role', alignRight: false },
-  { id: 'isVerified', label: 'Verified', alignRight: false },
-  { id: 'status', label: 'Status', alignRight: false },
+  { id: 'FirstName', label: 'First Name', alignRight: false },
+  { id: 'LastName', label: 'Last Name', alignRight: false },
+  { id: 'Email', label: 'Email', alignRight: false },
+  { id: 'Telephone', label: 'Telephone', alignRight: false },
+  { id: 'Address', label: 'Address', alignRight: false },
+  { id: 'Verify', label: 'Verify', alignRight: false },
   { id: '' },
 ];
 
@@ -141,17 +144,26 @@ export default function AdminPage() {
   const [selectedAddress, setSelectedAddress] = useState([]);
 
   const [form, setForm] = useState({})
+  const [formUpdate, setFormUpdate] = useState({})
+  const [idUpdate, sections] = useState('')
 
   useEffect(() => {
     axios.get(`${baseURL}/admin`).then((res) => {
-      console.log(res.data);
-      setUsers(res.data); 
+      console.log(res.data.json);
+      setUsers(res.data.json); 
     })
   }, [])
 
   const handleForm = (e) => {
     setForm({
       ...form,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  const handleFormUpdate = (e) => {
+    setFormUpdate({
+      ...formUpdate,
       [e.target.name]: e.target.value
     })
   }
@@ -168,8 +180,6 @@ export default function AdminPage() {
     const data = await response.json()
     console.log(data);
   }
-
-  console.log(USERLIST);
 
 // #region ui
   const handleOpenMenu = (event) => {
@@ -188,7 +198,7 @@ export default function AdminPage() {
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds = USERLIST.map((n) => n.name);
+      const newSelecteds = users.map((n) => n.name);
       setSelected(newSelecteds);
       return;
     }
@@ -201,6 +211,7 @@ export default function AdminPage() {
         setProvinces(response.data);
       });
   }, []);
+
 
 
   const handleProvinceChange = (event) => {
@@ -245,7 +256,7 @@ export default function AdminPage() {
     })
     event.target.options[0].text = selectedWard.Name;
   };
-
+  
 
   const handleClick = (event, name) => {
     const selectedIndex = selected.indexOf(name);
@@ -276,9 +287,9 @@ export default function AdminPage() {
     setFilterName(event.target.value);
   };
 
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - USERLIST.length) : 0;
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - users.length) : 0;
 
-  const filteredUsers = applySortFilter(USERLIST, getComparator(order, orderBy), filterName);
+  const filteredUsers = applySortFilter(users, getComparator(order, orderBy), filterName);
 
   const isNotFound = !filteredUsers.length && !!filterName;
   // #endregion
@@ -298,6 +309,7 @@ export default function AdminPage() {
             New User
           </Button>
         </Stack>
+        {/* insert */}
         <Modal
           aria-labelledby="transition-modal-title"
           aria-describedby="transition-modal-description"
@@ -314,7 +326,7 @@ export default function AdminPage() {
           <Fade in={openModal}>
             <Box sx={style}>
               <Typography id="transition-modal-title" variant="h3" component="h2">
-                Create new user
+                Create a new admin account
               </Typography>
               <Typography id="transition-modal-description" sx={{ mt: 2 }}>
                 Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
@@ -323,6 +335,7 @@ export default function AdminPage() {
                 <TextField fullWidth name='firstName' label="First Name" id="firstName" sx={{ mt: 2 }} onChange={handleForm} />
                 <TextField fullWidth name='lastName' label="Last Name" id="lastName" sx={{ mt: 2 }} onChange={handleForm} />
                 <TextField fullWidth name='email' label="Email" id="email" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullWidth name='telephone' label="Telephone" id="telephone" sx={{ mt: 2 }} onChange={handleForm} />
                 <TextField fullWidth name='password' label="Password" type='password' id="password" sx={{ mt: 2 }} onChange={handleForm} />
                 <TextField fullWidth name='cfpassword' label="Confirm Password" type='password' id="cfpassword" sx={{ mt: 2 }} onChange={handleForm} />
                 <div >
@@ -380,6 +393,7 @@ export default function AdminPage() {
             </Box>
           </Fade>
         </Modal>
+        {/* update */}
         <Modal
           aria-labelledby="transition-modal-title"
           aria-describedby="transition-modal-description"
@@ -396,35 +410,71 @@ export default function AdminPage() {
           <Fade in={openModalUpdate}>
             <Box sx={style}>
               <Typography id="transition-modal-title" variant="h3" component="h2">
-                Update user profile
+                Update admin profile
               </Typography>
               <Typography id="transition-modal-description" sx={{ mt: 2 }}>
                 Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
               </Typography>
-              <TextField fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Last Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Email" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Username" id="fullWidth" sx={{ mt: 2 }} />
-              <Grid container spacing={2} sx={{ mt: 2 }}>
-                <Grid item xs={4}>
-                  <Button 
-                    variant="contained" 
-                    endIcon={<SendOutlinedIcon />} 
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Send
-                  </Button>
+              <form onSubmit={handleSubmitForm}>
+                <TextField fullWidth name='firstName' label="First Name" id="firstName" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullWidth name='firstName' label="First Name" id="firstName" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullWidth name='lastName' label="Last Name" id="lastName" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullWidth name='email' label="Email" id="email" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullWidth name='telephone' label="Telephone" id="telephone" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullWidth name='password' label="Password" type='password' id="password" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullWidth name='cfpassword' label="Confirm Password" type='password' id="cfpassword" sx={{ mt: 2 }} onChange={handleForm} />
+                <div >
+                  <FormControl sx={{ mt: 2, minWidth: 120 }}>
+                      <InputLabel htmlFor="grouped-native-select">Tỉnh Thành</InputLabel>
+                      <Select native defaultValue="" name='provinces' id="grouped-provinces-select" label="Tỉnh Thành" onChange={handleProvinceChange}>
+                          <option value="" disabled hidden>   </option>
+                          {provinces.map((province) => (
+                          <option key={province.Id} value={province.Id}>{province.Name}</option>
+                          ))}
+                      </Select>
+                  </FormControl>
+                  <FormControl sx={{ mt: 2, ml: 2, minWidth: 200 }}>
+                      <InputLabel htmlFor="grouped-select">Quận / Huyện</InputLabel>
+                      <Select native defaultValue="" name='districts' id="grouped-districts-select" label="Quận / Huyện" onChange={handleDistrictChange}>
+                          <option value="" disabled hidden>   </option>
+                          {districts.map((district) => (
+                          <option key={district.Id} value={district.Id}>{district.Name}</option>
+                          ))}
+                      </Select>
+                  </FormControl>
+                  <FormControl sx={{ mt: 2, ml:2, minWidth: 170 }}>
+                      <InputLabel htmlFor="grouped-select">Xã / Phường</InputLabel>
+                      <Select native defaultValue="" name='wards' id="grouped-wards-select" label="Xã / Phường" onChange={handleWardChange}>
+                          <option value="" disabled hidden>   </option>
+                          {wards.map((ward) => (
+                          <option key={ward.Id} value={ward.Id}>{ward.Name}</option>
+                          ))}
+                      </Select>
+                  </FormControl>
+                </div>
+              
+                <Grid container spacing={2} sx={{ mt: 2 }}>
+                  <Grid item xs={2} sx={{mr: 6}}>
+                    <Button 
+                      variant="contained"
+                      type='submit' 
+                      endIcon={<EditIcon />} 
+                      style={{ width: "150px", height: "50px" }}
+                    >
+                      Update
+                    </Button>
+                  </Grid>
+                  <Grid item xs={6} container justify="flex-end">
+                    <Button 
+                      onClick={handleCloseModalUpdate}
+                      variant="outlined" 
+                      style={{ width: "150px", height: "50px" }}
+                    >
+                      Cancel
+                    </Button>
+                  </Grid>
                 </Grid>
-                <Grid item xs={6} container justify="flex-end">
-                  <Button 
-                    onClick={handleCloseModalUpdate}
-                    variant="outlined" 
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Cancel
-                  </Button>
-                </Grid>
-              </Grid>
+              </form>
             </Box>
           </Fade>
         </Modal>
@@ -462,46 +512,74 @@ export default function AdminPage() {
                   order={order}
                   orderBy={orderBy}
                   headLabel={TABLE_HEAD}
-                  rowCount={USERLIST.length}
+                  rowCount={users.length}
                   numSelected={selected.length}
                   onRequestSort={handleRequestSort}
                   onSelectAllClick={handleSelectAllClick}
                 />
                 <TableBody>
-                  {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                    const { id, name, role, status, company, avatarUrl, isVerified } = row;
-                    const selectedUser = selected.indexOf(name) !== -1;
+                  {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                    const { _id, firstName, lastName, email, address, telephone, verify } = row;
+                    const selectedUser = selected.indexOf(firstName) !== -1;
 
                     return (
-                      <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
+                      <TableRow hover key={index} tabIndex={-1} role="checkbox" selected={selectedUser}>
                         <TableCell padding="checkbox">
-                          <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
+                          <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, firstName)} />
                         </TableCell>
+                        
+                        <TableCell align="left">{firstName}</TableCell>
 
-                        <TableCell component="th" scope="row" padding="none">
-                          <Stack direction="row" alignItems="center" spacing={2}>
-                            <Avatar alt={name} src={avatarUrl} />
-                            <Typography variant="subtitle2" noWrap>
-                              {name}
-                            </Typography>
-                          </Stack>
-                        </TableCell>
+                        <TableCell align="left">{lastName}</TableCell>
 
-                        <TableCell align="left">{company}</TableCell>
+                        <TableCell align="left">{email}</TableCell>
 
-                        <TableCell align="left">{role}</TableCell>
-
-                        <TableCell align="left">{isVerified ? 'Yes' : 'No'}</TableCell>
-
+                        <TableCell align="left">{telephone}</TableCell>
+                  
                         <TableCell align="left">
-                          <Label color={(status === 'banned' && 'error') || 'success'}>{sentenceCase(status)}</Label>
+                          {address.map((line, index) => (
+                            <div key={index}>{line}</div>
+                          ))}
                         </TableCell>
-
+                        
+                          <TableCell align="left">
+                            <Label color={(verify ? 'success' : 'error')}>{(verify ? 'Active' : 'Unactive')}</Label>
+                          </TableCell>
+                       
                         <TableCell align="right">
+                          <input type="text"     value={_id} />
                           <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
                             <Iconify icon={'eva:more-vertical-fill'} />
                           </IconButton>
                         </TableCell>
+                        <Popover
+                          open={Boolean(open)}
+                          anchorEl={open}
+                          onClose={handleCloseMenu}
+                          anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+                          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                          PaperProps={{
+                            sx: {
+                              p: 1,
+                              width: 140,
+                              '& .MuiMenuItem-root': {
+                                px: 1,
+                                typography: 'body2',
+                                borderRadius: 0.75,
+                              },
+                            },
+                          }}
+                        >
+                          <MenuItem onClick={handleOpenModalUpdate}>
+                            <Iconify icon={'eva:edit-fill'} sx={{ mr: 2 }} />
+                            <Link to={`/update/${_id}`}>Update</Link>
+                          </MenuItem>
+
+                          <MenuItem onClick={handleOpenDelete} sx={{ color: 'error.main' }}>
+                            <Iconify icon={'eva:trash-2-outline'} sx={{ mr: 2 }} />
+                            Delete
+                          </MenuItem>
+                        </Popover>
                       </TableRow>
                     );
                   })}
@@ -542,7 +620,7 @@ export default function AdminPage() {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
-            count={USERLIST.length}
+            count={users.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -550,35 +628,6 @@ export default function AdminPage() {
           />
         </Card>
       </Container>
-
-      <Popover
-        open={Boolean(open)}
-        anchorEl={open}
-        onClose={handleCloseMenu}
-        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{
-          sx: {
-            p: 1,
-            width: 140,
-            '& .MuiMenuItem-root': {
-              px: 1,
-              typography: 'body2',
-              borderRadius: 0.75,
-            },
-          },
-        }}
-      >
-        <MenuItem onClick={handleOpenModalUpdate}>
-          <Iconify icon={'eva:edit-fill'} sx={{ mr: 2 }} />
-          Edit
-        </MenuItem>
-
-        <MenuItem onClick={handleOpenDelete} sx={{ color: 'error.main' }}>
-          <Iconify icon={'eva:trash-2-outline'} sx={{ mr: 2 }} />
-          Delete
-        </MenuItem>
-      </Popover>
     </>
   );
 }
