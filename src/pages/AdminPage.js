@@ -2,7 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 // @mui
 import {
   Card,
@@ -37,6 +37,7 @@ import {
   ListSubheader,
   FormControl,
   Select,
+  FormGroup,
 } from '@mui/material';
 
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
@@ -44,6 +45,7 @@ import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import Label from '../components/label';
 import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
+import { baseURL } from '../utils/constant';
 // sections
 import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
 // mock
@@ -129,13 +131,47 @@ export default function AdminPage() {
   const handleOpenDelete = () => setOpenDelete(true);
   const handleCloseDelete = () => setOpenDelete(false);
 
+  const [users, setUsers] = useState([]); 
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedWard, setSelectedWard] = useState("");
+  const [selectedAddress, setSelectedAddress] = useState([]);
 
+  const [form, setForm] = useState({})
+
+  useEffect(() => {
+    axios.get(`${baseURL}/admin`).then((res) => {
+      console.log(res.data);
+      setUsers(res.data); 
+    })
+  }, [])
+
+  const handleForm = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  const handleSubmitForm = async (e) => {
+    e.preventDefault();
+    const response = await fetch(`${baseURL}/admin`, {
+      method: 'POST',
+      body: JSON.stringify(form),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await response.json()
+    console.log(data);
+  }
+
+  console.log(USERLIST);
+
+// #region ui
   const handleOpenMenu = (event) => {
     setOpen(event.currentTarget);
   };
@@ -166,37 +202,50 @@ export default function AdminPage() {
       });
   }, []);
 
-//   const handleProvinceChange = (event) => {
-//     const provinceId = event.target.value;
-//     const selectedProvince = provinces.find((province) => province.Id === provinceId);
-//     setDistricts(selectedProvince?.Districts || []);
-//     setWards([]);
-//   };
-
-  const handleDistrictChange = (event) => {
-    const districtId = event.target.value;
-    const selectedValue = event.target.value;
-    const selectedDistrict = districts.find((district) => district.Id === districtId);
-    setWards(selectedDistrict?.Wards || []);
-    setSelectedDistrict(selectedValue);
-    event.target.options[0].text = selectedDistrict.Name;
-  };
 
   const handleProvinceChange = (event) => {
     const selectedValue = event.target.value;
+    const selectedOption = event.target.options[event.target.selectedIndex];
     const selectedProvince = provinces.find((province) => province.Id === selectedValue);
     setDistricts(selectedProvince?.Districts || []);
     setWards([]);
     setSelectedProvince(selectedValue);
+    setSelectedAddress([selectedProvince.Name, "", ""]);
+    setForm({
+      ...form,
+      [event.target.name]: selectedOption.text
+    })
     event.target.options[0].text = selectedProvince.Name;
+  };
+
+  const handleDistrictChange = (event) => {
+    const districtId = event.target.value;
+    const selectedValue = event.target.value;
+    const selectedOption = event.target.options[event.target.selectedIndex];
+    const selectedDistrict = districts.find((district) => district.Id === districtId);
+    setWards(selectedDistrict?.Wards || []);
+    setSelectedDistrict(selectedValue);
+    setSelectedAddress(prevState => [prevState[0], selectedDistrict.Name, ""]);
+    setForm({
+      ...form,
+      [event.target.name]: selectedOption.text
+    })
+    event.target.options[0].text = selectedDistrict.Name;
   };
 
   const handleWardChange = (event) => {
     const selectedValue = event.target.value;
+    const selectedOption = event.target.options[event.target.selectedIndex];
     const selectedWard = wards.find((ward) => ward.Id === selectedValue);
     setSelectedWard(selectedValue);
+    setSelectedAddress(prevState => [prevState[0], prevState[1], selectedWard.Name]);
+    setForm({
+      ...form,
+      [event.target.name]: selectedOption.text
+    })
     event.target.options[0].text = selectedWard.Name;
   };
+
 
   const handleClick = (event, name) => {
     const selectedIndex = selected.indexOf(name);
@@ -232,6 +281,7 @@ export default function AdminPage() {
   const filteredUsers = applySortFilter(USERLIST, getComparator(order, orderBy), filterName);
 
   const isNotFound = !filteredUsers.length && !!filterName;
+  // #endregion
 
   return (
     <>
@@ -269,59 +319,64 @@ export default function AdminPage() {
               <Typography id="transition-modal-description" sx={{ mt: 2 }}>
                 Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
               </Typography>
-              <TextField fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Last Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Email" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Username" id="fullWidth" sx={{ mt: 2 }} />
-              <div >
-                <FormControl sx={{ mt: 2, minWidth: 120 }}>
-                    <InputLabel htmlFor="grouped-native-select">Tỉnh Thành</InputLabel>
-                    <Select native defaultValue="" id="grouped-native-select" label="Tỉnh Thành" onChange={handleProvinceChange}>
-                        <option value="" disabled hidden>   </option>
-                        {provinces.map((province) => (
-                        <option key={province.Id} value={province.Id}>{province.Name}</option>
-                        ))}
-                    </Select>
-                </FormControl>
-                <FormControl sx={{ mt: 2, ml: 2, minWidth: 200 }}>
-                    <InputLabel htmlFor="grouped-select">Quận / Huyện</InputLabel>
-                    <Select native defaultValue="" id="grouped-native-select" label="Quận / Huyện" onChange={handleDistrictChange}>
-                        <option value="" disabled hidden>   </option>
-                        {districts.map((district) => (
-                        <option key={district.Id} value={district.Id}>{district.Name}</option>
-                        ))}
-                    </Select>
-                </FormControl>
-                <FormControl sx={{ mt: 2, ml:2, minWidth: 170 }}>
-                    <InputLabel htmlFor="grouped-select">Xã / Phường</InputLabel>
-                    <Select native defaultValue="" id="grouped-native-select" label="Xã / Phường" onChange={handleWardChange}>
-                        <option value="" disabled hidden>   </option>
-                        {wards.map((ward) => (
-                        <option key={ward.Id} value={ward.Id}>{ward.Name}</option>
-                        ))}
-                    </Select>
-                </FormControl>
-              </div>
-              <Grid container spacing={2} sx={{ mt: 2 }}>
-                <Grid item xs={2} sx={{mr: 6}}>
-                  <Button 
-                    variant="contained" 
-                    endIcon={<SendOutlinedIcon />} 
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Send
-                  </Button>
+              <form onSubmit={handleSubmitForm}>
+                <TextField fullWidth name='firstName' label="First Name" id="firstName" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullWidth name='lastName' label="Last Name" id="lastName" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullWidth name='email' label="Email" id="email" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullWidth name='password' label="Password" type='password' id="password" sx={{ mt: 2 }} onChange={handleForm} />
+                <TextField fullWidth name='cfpassword' label="Confirm Password" type='password' id="cfpassword" sx={{ mt: 2 }} onChange={handleForm} />
+                <div >
+                  <FormControl sx={{ mt: 2, minWidth: 120 }}>
+                      <InputLabel htmlFor="grouped-native-select">Tỉnh Thành</InputLabel>
+                      <Select native defaultValue="" name='provinces' id="grouped-provinces-select" label="Tỉnh Thành" onChange={handleProvinceChange}>
+                          <option value="" disabled hidden>   </option>
+                          {provinces.map((province) => (
+                          <option key={province.Id} value={province.Id}>{province.Name}</option>
+                          ))}
+                      </Select>
+                  </FormControl>
+                  <FormControl sx={{ mt: 2, ml: 2, minWidth: 200 }}>
+                      <InputLabel htmlFor="grouped-select">Quận / Huyện</InputLabel>
+                      <Select native defaultValue="" name='districts' id="grouped-districts-select" label="Quận / Huyện" onChange={handleDistrictChange}>
+                          <option value="" disabled hidden>   </option>
+                          {districts.map((district) => (
+                          <option key={district.Id} value={district.Id}>{district.Name}</option>
+                          ))}
+                      </Select>
+                  </FormControl>
+                  <FormControl sx={{ mt: 2, ml:2, minWidth: 170 }}>
+                      <InputLabel htmlFor="grouped-select">Xã / Phường</InputLabel>
+                      <Select native defaultValue="" name='wards' id="grouped-wards-select" label="Xã / Phường" onChange={handleWardChange}>
+                          <option value="" disabled hidden>   </option>
+                          {wards.map((ward) => (
+                          <option key={ward.Id} value={ward.Id}>{ward.Name}</option>
+                          ))}
+                      </Select>
+                  </FormControl>
+                </div>
+              
+                <Grid container spacing={2} sx={{ mt: 2 }}>
+                  <Grid item xs={2} sx={{mr: 6}}>
+                    <Button 
+                      variant="contained" 
+                      type='submit'
+                      endIcon={<SendOutlinedIcon />} 
+                      style={{ width: "150px", height: "50px" }}
+                    >
+                      Send
+                    </Button>
+                  </Grid>
+                  <Grid item xs={2} container justify="flex-end">
+                    <Button 
+                      onClick={handleCloseModal}
+                      variant="outlined" 
+                      style={{ width: "150px", height: "50px" }}
+                    >
+                      Cancel
+                    </Button>
+                  </Grid>
                 </Grid>
-                <Grid item xs={2} container justify="flex-end">
-                  <Button 
-                    onClick={handleCloseModal}
-                    variant="outlined" 
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Cancel
-                  </Button>
-                </Grid>
-              </Grid>
+              </form>
             </Box>
           </Fade>
         </Modal>

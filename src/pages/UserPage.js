@@ -2,6 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
 import { useState } from 'react';
+import axios from "axios";
 // @mui
 import {
   Card,
@@ -218,10 +219,13 @@ export default function UserPage() {
               <Typography id="transition-modal-description" sx={{ mt: 2 }}>
                 Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
               </Typography>
-              <TextField fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Last Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Email" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Username" id="fullWidth" sx={{ mt: 2 }} />
+              <TextField fullWidth name='firstName' label="First Name" id="fullWidth" sx={{ mt: 2 }} />
+              <TextField fullWidth name='lastName' label="Last Name" id="fullWidth" sx={{ mt: 2 }} />
+              <TextField fullWidth name='email' label="Email" id="fullWidth" sx={{ mt: 2 }} />
+              <TextField fullWidth name='address' label="Username" id="fullWidth" sx={{ mt: 2 }} />
+              <TextField fullWidth name='telephone' label="Username" id="fullWidth" sx={{ mt: 2 }} />
+              <TextField fullWidth name='password' label="Password" id="fullWidth" sx={{ mt: 2 }} />
+              <TextField fullWidth name='cfpassword' label="Confirm Password" id="fullWidth" sx={{ mt: 2 }} />
               <Grid container spacing={2} sx={{ mt: 2 }}>
                 <Grid item xs={4}>
                   <Button 
