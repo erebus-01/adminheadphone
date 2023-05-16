@@ -1,10 +1,12 @@
 import { Helmet } from 'react-helmet-async';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import axios, { AxiosError } from 'axios';
 // @mui
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import {
   Card,
   Table,
@@ -108,6 +110,7 @@ function applySortFilter(array, comparator, query) {
 }
 
 export default function AdminPage() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(null);
 
   const [page, setPage] = useState(0);
@@ -147,6 +150,11 @@ export default function AdminPage() {
   const [formUpdate, setFormUpdate] = useState({})
   const [idUpdate, sections] = useState('')
 
+  
+  const [openPopup, setOpenPopup] = useState(false);
+  const [severity, setSeverity] = useState('');
+  const [message, setMessage] = useState('');
+
   useEffect(() => {
     axios.get(`${baseURL}/admin`).then((res) => {
       console.log(res.data.json);
@@ -168,6 +176,17 @@ export default function AdminPage() {
     })
   }
 
+  const Alert = React.forwardRef((props, ref) => (
+    <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
+  ));
+  const handleClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setOpenPopup(false);
+  };
+
+
   const handleSubmitForm = async (e) => {
     e.preventDefault();
     const response = await fetch(`${baseURL}/admin`, {
@@ -178,7 +197,19 @@ export default function AdminPage() {
       }
     })
     const data = await response.json()
-    console.log(data);
+    
+    if(response.status === 201) {
+      navigate('/dashboard/admin')
+      setOpenModal(false);
+      setOpenPopup(true);
+      setMessage(data.message);
+      setSeverity('success')
+    }
+    else {
+      setOpenModal(false);
+      setMessage(data.message);
+      setSeverity('error')
+    }
   }
 
 // #region ui
@@ -309,6 +340,13 @@ export default function AdminPage() {
             New User
           </Button>
         </Stack>
+        
+        {openPopup &&       
+          <Snackbar open={openPopup} autoHideDuration={5000} onClose={handleClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+            <Alert severity={severity} sx={{ width: '100%' }}>
+              {message}
+            </Alert>
+          </Snackbar>}
         {/* insert */}
         <Modal
           aria-labelledby="transition-modal-title"
@@ -547,7 +585,7 @@ export default function AdminPage() {
                           </TableCell>
                        
                         <TableCell align="right">
-                          <input type="text"     value={_id} />
+                          <input type="text" hidden value={_id} />
                           <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
                             <Iconify icon={'eva:more-vertical-fill'} />
                           </IconButton>

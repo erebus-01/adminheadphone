@@ -1,44 +1,12 @@
-  {/* 
-  const handleProvinceChange = (event) => {
-    const selectedValue = event.target.value;
-    const selectedOption = event.target.options[event.target.selectedIndex];
-    const selectedProvince = provinces.find((province) => province.Id === selectedValue);
-    setDistricts(selectedProvince?.Districts || []);
-    setWards([]);
-    setSelectedProvince(selectedValue);
-    setSelectedAddress([selectedProvince.Name, "", ""]);
-    setForm({
-      ...form,
-      [event.target.name]: selectedOption.text
-    })
-    event.target.options[0].text = selectedProvince.Name;
-  };
+https://www.beatsbydre.com/content/dam/beats/web/product/earbuds/studio-buds/pdp/product-carousel/white/pc-studiobuds-white-case-open-floating.jpg
+https://www.beatsbydre.com/content/dam/beats/web/product/earbuds/studio-buds/pdp/product-carousel/white/pc-studiobuds-white-earbuds-inside-outside.jpg
+https://www.beatsbydre.com/content/dam/beats/web/product/earbuds/studio-buds/pdp/product-carousel/white/pc-studiobuds-white-earbuds-b-logo.jpg
+https://www.beatsbydre.com/content/dam/beats/web/product/earbuds/studio-buds/pdp/product-carousel/white/pc-studiobuds-white-case-open.jpg
+https://www.beatsbydre.com/content/dam/beats/web/product/earbuds/studio-buds/pdp/product-carousel/white/pc-studiobuds-white-case-charger.jpg
+https://www.beatsbydre.com/content/dam/beats/web/product/earbuds/studio-buds/pdp/product-carousel/white/pc-studiobuds-white-unboxed.jpg
 
-  const handleDistrictChange = (event) => {
-    const districtId = event.target.value;
-    const selectedValue = event.target.value;
-    const selectedOption = event.target.options[event.target.selectedIndex];
-    const selectedDistrict = districts.find((district) => district.Id === districtId);
-    setWards(selectedDistrict?.Wards || []);
-    setSelectedDistrict(selectedValue);
-    setSelectedAddress(prevState => [prevState[0], selectedDistrict.Name, ""]);
-    setForm({
-      ...form,
-      [event.target.name]: selectedOption.text
-    })
-    event.target.options[0].text = selectedDistrict.Name;
-  };
-
-  const handleWardChange = (event) => {
-    const selectedValue = event.target.value;
-    const selectedOption = event.target.options[event.target.selectedIndex];
-    const selectedWard = wards.find((ward) => ward.Id === selectedValue);
-    setSelectedWard(selectedValue);
-    setSelectedAddress(prevState => [prevState[0], prevState[1], selectedWard.Name]);
-    setForm({
-      ...form,
-      [event.target.name]: selectedOption.text
-    })
-    event.target.options[0].text = selectedWard.Name;
-  };
-  */}
+image
+title
+author
+topic
+content

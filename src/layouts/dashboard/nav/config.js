@@ -17,9 +17,9 @@ const navConfig = [
     icon: icon('ic_admin'),
   },
   {
-    title: 'exhibit',
-    path: '/dashboard/products/exhibit',
-    icon: icon('ic_cart'),
+    title: 'Product',
+    path: '/dashboard/products',
+    icon: icon('ic_lock'),
   },
   {
     title: 'blog',
@@ -37,9 +37,14 @@ const navConfig = [
     icon: icon('ic_user'),
   },
   {
-    title: 'Product',
-    path: '/dashboard/products',
-    icon: icon('ic_lock'),
+    title: 'exhibit',
+    path: '/dashboard/products/exhibit',
+    icon: icon('ic_cart'),
+  },
+  {
+    title: 'blog list',
+    path: '/dashboard/blog_list',
+    icon: icon('ic_blog'),
   },
   // {
   //   title: 'Not found',

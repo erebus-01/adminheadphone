@@ -1,30 +1,24 @@
 import { Helmet } from 'react-helmet-async';
 import { filter } from 'lodash';
-import { sentenceCase } from 'change-case';
-import { useState, useEffect } from 'react';
+import { useNavigate  } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import axios from "axios";
 // @mui
 import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { red, teal } from '@mui/material/colors';
 import {
   Card,
-  Table,
   Stack,
-  Paper,
-  Avatar,
   Button,
   Popover,
-  Checkbox,
   TableRow,
   MenuItem,
-  TableBody,
   TableCell,
   Container,
   Typography,
-  IconButton,
-  TableContainer,
   TablePagination,
   Backdrop,
   Box,
@@ -36,37 +30,32 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-  DialogTitle
+  DialogTitle,
+  IconButton
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert, { AlertProps } from '@mui/material/Alert';
+import EditIcon from '@mui/icons-material/Edit';
+import ColorLensIcon from '@mui/icons-material/ColorLens';
 
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 // components
-import Label from '../components/label';
 import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
 import { URL, baseURL } from '../utils/constant';
 // sections
 import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
-// mock
-import USERLIST from '../_mock/user';
 
 // ----------------------------------------------------------------------
 
-const TABLE_HEAD = [
-  { id: 'name', label: 'Name', alignRight: false },
-  { id: 'company', label: 'Company', alignRight: false },
-  { id: 'role', label: 'Role', alignRight: false },
-  { id: 'isVerified', label: 'Verified', alignRight: false },
-  { id: 'status', label: 'Status', alignRight: false },
-  { id: '' },
-];
 
 const style = {
   position: 'absolute',
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: 600,
+  width: 1000,
   bgcolor: 'background.paper',
   boxShadow: 24,
   p: 4,
@@ -104,6 +93,7 @@ function applySortFilter(array, comparator, query) {
 }
 
 export default function AddProductPage() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(null);
 
   const [page, setPage] = useState(0);
@@ -116,22 +106,20 @@ export default function AddProductPage() {
 
   const [filterName, setFilterName] = useState('');
 
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const [openModal, setOpenModal] = useState(false);
 
   const [products, setProducts] = useState([]); 
-  const [productId, setProductId] = useState([]); 
-  const [colors, setColors] = useState([]); 
-  const [users, setUsers] = useState([]); 
+  
+  const [openPopup, setOpenPopup] = useState(false);
+  const [severity, setSeverity] = useState('');
+  const [message, setMessage] = useState('');
+  const [form, setForm] = useState({})
+  const [formColor, setFormColor] = useState({})
 
   const [expanded, setExpanded] = useState(false);
-  const handleChange = (panelId) => (event, isExpanded) => {
-      setExpanded(isExpanded ? panelId : '');
-      console.log(panelId)
-    };
 
-  const [form, setForm] = useState({})
 
   const handleForm = (e) => {
     setForm({
@@ -140,24 +128,81 @@ export default function AddProductPage() {
     })
   }
 
-  useEffect(() => {
-    // axios.get(`${baseURL}/products`).then((res) => {
-    //   setProducts(res.data); 
-    // })
-    // axios
-    // .all([
-    //   axios.get(`${baseURL}/products`),
-    //   axios.get(`${baseURL}/products/colors/${productId}`)
-    // ])
-    // .then(axios.spread((productsRes, colorsRes) => {
-    //   setProducts(productsRes.data);
-    //   setColors(colorsRes.data);
-    // }))
-    // .catch(error => {
-    //   console.error(error);
-    // });
-  }, [])
+  const handleSubmitForm = async (e) => {
+    e.preventDefault();
+    const response = await fetch(`${baseURL}/product`, {
+      method: 'POST',
+      body: JSON.stringify(form),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await response.json()
+    if(response.status === 201) {
+      navigate('/dashboard/products')
+      setOpenModal(false);
+      setOpenPopup(true);
+      setMessage(data.message);
+      setSeverity('success')
+    }
+    else {
+      setOpenModal(false);
+      setMessage(data.message);
+      setSeverity('error')
+    }
+  }
+  
+  const handleColorForm = (e) => {
+    setFormColor({
+      ...formColor,
+      [e.target.name]: e.target.value
+    })
+  }
 
+  const handleSubmitFormColor = async (e, product) => {
+    e.preventDefault();
+    const response = await fetch(`${baseURL}/product/color/${product}`, {
+      method: 'POST',
+      body: JSON.stringify(formColor),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await response.json();
+    if(response.status === 201) {
+      navigate('/dashboard/products')
+      setOpenColor(false);
+      setOpenPopup(true);
+      setMessage(data.message);
+      setSeverity('success')
+    }
+    else {
+      setOpenColor(false);
+      setMessage(data.message);
+      setSeverity('error')
+    }
+  }
+
+  const handleDeleteProduct = async (e, product) => {
+    e.preventDefault();
+    const response = await fetch(`${baseURL}/product/${product}`, {
+      method: 'DELETE',
+    })
+    const data = await response.json()
+    if(response.status === 201) {
+      navigate('/dashboard/products')
+      setOpenPopup(true);
+      setMessage(data.message);
+      setSeverity('success')
+    }
+    else {
+      setOpenPopup(true);
+      setMessage(data.message);
+      setSeverity('error')
+    }
+  }
+
+  // #region ui
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -169,20 +214,25 @@ export default function AddProductPage() {
     };
 
     fetchProducts();
-  }, []);
+  }, [products]);
 
   const loadProductColors = async (productID) => {
     try {
-      const response = await axios.get(`${baseURL}/product/colors/${productID}`);
+      const response = await axios.get(`${baseURL}/products/colors/${productID}`);
       const colors = response.data;
     } catch (error) {
       console.error(error);
     }
   };
 
-  // #region ui
+
+
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
+
+  const [openColor, setOpenColor] = useState(false);
+  const handleOpenColorModal = () => setOpenColor(true);
+  const handleCloseColorModal = () => setOpenColor(false);
 
   const [openModalUpdate, setOpenModalUpdate] = useState(false);
   const handleOpenModalUpdate = () => setOpenModalUpdate(true);
@@ -192,43 +242,8 @@ export default function AddProductPage() {
   const handleOpenDelete = () => setOpenDelete(true);
   const handleCloseDelete = () => setOpenDelete(false);
 
-  const handleOpenMenu = (event) => {
-    setOpen(event.currentTarget);
-  };
-
-
   const handleCloseMenu = () => {
     setOpen(null);
-  };
-
-  const handleRequestSort = (event, property) => {
-    const isAsc = orderBy === property && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(property);
-  };
-
-  const handleSelectAllClick = (event) => {
-    if (event.target.checked) {
-      const newSelecteds = products.map((n) => n.name);
-      setSelected(newSelecteds);
-      return;
-    }
-    setSelected([]);
-  };
-
-  const handleClick = (event, name) => {
-    const selectedIndex = selected.indexOf(name);
-    let newSelected = [];
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, name);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(selected.slice(0, selectedIndex), selected.slice(selectedIndex + 1));
-    }
-    setSelected(newSelected);
   };
 
   const handleChangePage = (event, newPage) => {
@@ -237,12 +252,26 @@ export default function AddProductPage() {
 
   const handleChangeRowsPerPage = (event) => {
     setPage(0);
-    setRowsPerPage(parseInt(event.target.value, 10));
+    setRowsPerPage(parseInt(event.target.value, 5));
   };
 
   const handleFilterByName = (event) => {
     setPage(0);
     setFilterName(event.target.value);
+  };
+
+  const handleChange = (panelId) => (event, isExpanded) => {
+    setExpanded(isExpanded ? panelId : '');
+  };
+
+  const Alert = React.forwardRef((props, ref) => (
+    <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
+  ));
+  const handleClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setOpenPopup(false);
   };
 
   const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - products.length) : 0;
@@ -257,7 +286,6 @@ export default function AddProductPage() {
       <Helmet>
         <title> User | Minimal UI </title>
       </Helmet>
-
       <Container>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
           <Typography variant="h4" gutterBottom>
@@ -267,6 +295,13 @@ export default function AddProductPage() {
             New Product
           </Button>
         </Stack>
+        {openPopup &&       
+          <Snackbar open={openPopup} autoHideDuration={5000} onClose={handleClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+            <Alert severity={severity} sx={{ width: '100%' }}>
+              {message}
+            </Alert>
+          </Snackbar>}
+
         <Modal
           aria-labelledby="transition-modal-title"
           aria-describedby="transition-modal-description"
@@ -283,20 +318,20 @@ export default function AddProductPage() {
           <Fade in={openModal}>
             <Box sx={style}>
               <Typography id="transition-modal-title" variant="h3" component="h2">
-                Create new user
+                Create new product
               </Typography>
               <Typography id="transition-modal-description" sx={{ mt: 2 }}>
                 Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
               </Typography>
-              <form>
-                <TextField fullwidth="true" name='firstName' label="First Name" id="firstName" sx={{ mt: 2 }} onChange={handleForm} />
-                <TextField fullwidth="true" name='lastName' label="Last Name" id="lastName" sx={{ mt: 2 }} onChange={handleForm} />
-                <TextField fullwidth="true" name='email' label="Email" type='email' id="email" sx={{ mt: 2 }} onChange={handleForm} />
-                <TextField fullwidth="true" name='username' label="Username" id="username" sx={{ mt: 2 }} onChange={handleForm} />
-                <TextField fullwidth="true" name='password' label="Password" type='password' id="password" sx={{ mt: 2 }} onChange={handleForm} />
-                <TextField fullwidth="true" name='cfpassword' label="Confirm Password" type='password' id="cfpassword" sx={{ mt: 2 }} onChange={handleForm} />
+              <form onSubmit={handleSubmitForm}>
+                <TextField fullWidth name='name' label="Name" id="name" sx={{ mt: 2 }} onChange={handleForm} required />
+                <TextField fullWidth name='subtitles' label="Subtitles" id="subtitles" sx={{ mt: 2 }} onChange={handleForm} required  />
+                <TextField fullWidth name='image' label="ImageURL" id="image" sx={{ mt: 2 }} onChange={handleForm} required  />
+                <TextField fullWidth name='benefit' label="Benefit" id="benefit" sx={{ mt: 2 }} onChange={handleForm} multiline rows={5} required  />
+                <TextField fullWidth name='price' label="Price" type='number' id="price" sx={{ mt: 2 }} onChange={handleForm} required  />
+                <TextField fullWidth name='description' label="DescriptionURL" id="description" sx={{ mt: 2 }} onChange={handleForm} multiline rows={5} required  />
                 <Grid container spacing={2} sx={{ mt: 2 }}>
-                  <Grid item xs={4}>
+                  <Grid item xs={2}>
                     <Button 
                       variant="contained" 
                       type='submit'
@@ -306,7 +341,7 @@ export default function AddProductPage() {
                       Send
                     </Button>
                   </Grid>
-                  <Grid item xs={6} container justify="flex-end">
+                  <Grid item xs={2} container justify="flex-end">
                     <Button 
                       onClick={handleCloseModal}
                       variant="outlined" 
@@ -341,10 +376,10 @@ export default function AddProductPage() {
               <Typography id="transition-modal-description" sx={{ mt: 2 }}>
                 Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
               </Typography>
-              <TextField fullwidth="true" label="First Name" sx={{ mt: 2 }} />
-              <TextField fullwidth="true" label="Last Name"sx={{ mt: 2 }} />
-              <TextField fullwidth="true" label="Email" sx={{ mt: 2 }} />
-              <TextField fullwidth="true" label="Username" sx={{ mt: 2 }} />
+              <TextField fullWidth label="First Name" sx={{ mt: 2 }} />
+              <TextField fullWidth label="Last Name"sx={{ mt: 2 }} />
+              <TextField fullWidth label="Email" sx={{ mt: 2 }} />
+              <TextField fullWidth label="Username" sx={{ mt: 2 }} />
               <Grid container spacing={2} sx={{ mt: 2 }}>
                 <Grid item xs={4}>
                   <Button 
@@ -391,7 +426,7 @@ export default function AddProductPage() {
             </Button>
           </DialogActions>
         </Dialog>
-
+              
         <Card>
           <UserListToolbar numSelected={selected.length} filterName={filterName} onFilterName={handleFilterByName} />
 
@@ -407,13 +442,12 @@ export default function AddProductPage() {
                     aria-controls="panel1bh-content"
                     id="panel1bh-header"
                   >
-                    {productId === _id}
                     <img src={image} alt={name} loading="lazy" style={{ width: '7%', flexShrink: 0, borderRadius: 10, marginRight: 10 }} />
                     <div style={{width: '80%', flexShrink: 0}}>
-                      <Typography sx={{  }}>
+                      <Typography sx={{ fontSize: '20px', fontWeight: '700' }}>
                         {name}
                       </Typography>
-                      <Typography sx={{ color: 'text.secondary' }}>{subtitles}</Typography>
+                      <Typography sx={{ mt: 1, color: 'text.secondary' }}>{subtitles}</Typography>
                     </div>
                     <Typography>${price}</Typography>
                   </AccordionSummary>
@@ -425,16 +459,108 @@ export default function AddProductPage() {
                         ))}
                       </ul>
                     </div>
-                    {colors}
+                    <Grid container sx={{ mt: 1 }}>
+                      <Grid item>
+                        <Button 
+                          variant="contained"
+                          type='submit' 
+                          onClick={handleOpenColorModal}
+                          endIcon={<ColorLensIcon />} 
+                          style={{ width: "150px", height: "50px" }}
+                        >
+                          Add Color
+                        </Button>
+                      </Grid>
+                    </Grid>
+                    <Modal
+                      aria-labelledby="transition-modal-title"
+                      aria-describedby="transition-modal-description"
+                      open={openColor}
+                      onClose={handleCloseColorModal}
+                      closeAfterTransition
+                      slots={{ backdrop: Backdrop }}
+                      slotProps={{
+                        backdrop: {
+                          timeout: 500,
+                        },
+                      }}
+                    >
+                      <Fade in={openColor}>
+                        <Box sx={style}>
+                          <Typography id="transition-modal-title" variant="h3" component="h2">
+                            Create new color for product
+                          </Typography>
+                          <Typography id="transition-modal-description" sx={{ mt: 2 }}>
+                            Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
+                          </Typography>
+                          <form onSubmit={(e) => handleSubmitFormColor(e, _id)}>
+                            <TextField fullWidth name='name' label="Name" id="name" sx={{ mt: 2 }} required onChange={handleColorForm} />
+                            <TextField fullWidth name='color' label="Color" id="color" type='color' required sx={{ mt: 2, width: '150px' }} onChange={handleColorForm} />
+                            <TextField fullWidth name='images' label="Images" id="images" sx={{ mt: 2 }} required multiline rows={6} onChange={handleColorForm} />
+                          
+                            <Grid container spacing={2} sx={{ mt: 2 }}>
+                              <Grid item xs={2} sx={{mr: 6}}>
+                                <Button 
+                                  variant="contained" 
+                                  type='submit'
+                                  endIcon={<SendOutlinedIcon />} 
+                                  style={{ width: "150px", height: "50px" }}
+                                >
+                                  Insert
+                                </Button>
+                              </Grid>
+                              <Grid item xs={2} container justify="flex-end">
+                                <Button 
+                                  onClick={handleCloseColorModal}
+                                  variant="outlined" 
+                                  style={{ width: "150px", height: "50px" }}
+                                >
+                                  Cancel
+                                </Button>
+                              </Grid>
+                            </Grid>
+                          </form>
+                        </Box>
+                      </Fade>
+                    </Modal>
                     {colors.map((colorID, index) => {
                       return (
-                        <ColorComponent
-                          key={index}
-                          colorID={_id}
-                          onLoadProductColors={loadProductColors}
-                        />
+                        <>
+                          <ColorComponent
+                            key={_id}
+                            colorID={_id}
+                            onLoadProductColors={loadProductColors}
+                          />
+                        </>
                       );
                     })}
+                    {description.map((item, index) => (
+                      <img src={item} key={index} alt={name} loading="lazy" style={{ width: '100%', marginTop: '30px', flexShrink: 0, borderRadius: 10, marginRight: 10 }} />
+                    ))}
+
+                    <Grid container spacing={2} sx={{ mt: 2 }}>
+                      <Grid item xs={2} sx={{mr: 1}}>
+                        <Button 
+                          variant="contained"
+                          type='submit' 
+                          endIcon={<EditIcon />} 
+                          style={{ width: "150px", height: "50px", backgroundColor: teal[600] }}
+                        >
+                          Update
+                        </Button>
+                      </Grid>
+                      <Grid item xs={6} container justify="flex-end">
+                        <Button 
+                          onClick={(e) => {handleDeleteProduct(e, _id)}}
+                          variant="contained" 
+                          endIcon={<DeleteIcon />}
+                          style={{ width: "150px", height: "50px", backgroundColor: red[800] }}
+                        >
+                          Delete
+                        </Button>
+                      </Grid>
+                    </Grid>
+
                   </AccordionDetails>
                 </Accordion>
               );
@@ -457,41 +583,26 @@ export default function AddProductPage() {
           />
         </Card>
       </Container>
-
-      <Popover
-        open={Boolean(open)}
-        anchorEl={open}
-        onClose={handleCloseMenu}
-        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{
-          sx: {
-            p: 1,
-            width: 140,
-            '& .MuiMenuItem-root': {
-              px: 1,
-              typography: 'body2',
-              borderRadius: 0.75,
-            },
-          },
-        }}
-      >
-        <MenuItem onClick={handleOpenModalUpdate}>
-          <Iconify icon={'eva:edit-fill'} sx={{ mr: 2 }} />
-          Edit
-        </MenuItem>
-
-        <MenuItem onClick={handleOpenDelete} sx={{ color: 'error.main' }}>
-          <Iconify icon={'eva:trash-2-outline'} sx={{ mr: 2 }} />
-          Delete
-        </MenuItem>
-      </Popover>
     </>
   );
 }
 
+function rgbStringToHex(rgbString) {
+  const rgbValues = rgbString.substring(4, rgbString.length - 1);
+  const [r, g, b] = rgbValues.split(',').map((value) => parseInt(value.trim(), 10));
+  const hexR = r.toString(16).padStart(2, '0');
+  const hexG = g.toString(16).padStart(2, '0');
+  const hexB = b.toString(16).padStart(2, '0');
+  return `#${hexR}${hexG}${hexB}`;
+}
+
 const ColorComponent = ({ colorID, onLoadProductColors }) => {
+  const navigate = useNavigate();
   const [colors, setColors] = useState([]);
+  const [openDelete, setOpenDelete] = useState(false);
+
+  const handleOpenDelete = () => setOpenDelete(true);
+  const handleCloseDelete = () => setOpenDelete(false);
 
   useEffect(() => {
     const fetchColors = async () => {
@@ -499,9 +610,8 @@ const ColorComponent = ({ colorID, onLoadProductColors }) => {
         const response = await axios.get(`${baseURL}/products/colors/${colorID}`);
         const colorData = response.data.json;
         setColors(colorData);
-        console.log(`${baseURL}/products/colors/${colorID}`)
       } catch (error) {
-        console.error(error);
+        console.error(`Get error ${error}`);
       }
     };
 
@@ -509,17 +619,70 @@ const ColorComponent = ({ colorID, onLoadProductColors }) => {
   }, [colorID]);
 
   useEffect(() => {
-    if (colors.length > 0) {
+    if (colors && colors.length > 0) {
       onLoadProductColors(colors.map(color => color.product));
     }
   }, [colors, onLoadProductColors]);
 
+
+  const handleDeleteColor = async (productId, _id) => {
+    const response = await fetch(`${baseURL}/product/color/${productId}/${_id}`, {
+      method: 'DELETE',
+    })
+    const data = await response.json()
+    
+    if(response.status === 201) {
+      navigate('/dashboard/products');
+      setColors(prevColors => prevColors.filter(color => color._id !== _id));
+      handleCloseDelete();
+    }
+  }
+
+  if ((!colors || colors.length === 0)) {
+    return <p>Product has no colors.</p>;
+  }
+
   return (
     <div>
       {colors.map((color) => (
-        <div key={color._id}>
-          <img src={color.images[0]} style={{width: '5%'}} alt={color.name} />
-        </div>
+        <>
+          <div key={color._id} style={{marginTop: '30px'}}>
+            <div style={{flexGrow: 1, position: 'relative'}}>
+              <p style={{fontWeight: '700'}}>{color.name}</p>
+              <TextField fullwidth="true" label="Color" type='color' disabled value={(color.color.toString())} sx={{ mb: 1, width: '100px' }} />
+              <Grid container columns={16} display="flex" justifyContent="center" >
+                {color.images.map((item, index) => (
+                  <img src={item} key={index} style={{width: '10%', marginRight: '50px', border: '1px solid #b5b5b5', borderRadius: '10px'}} alt={color.name} />
+                ))}
+              </Grid>
+              <IconButton onClick={handleOpenDelete} aria-label="delete" size="large" sx={{ position: 'absolute', top: 10, right: 0 }}>
+                <DeleteIcon fontSize="inherit" />
+              </IconButton>
+              <Dialog
+                open={openDelete}
+                onClose={handleCloseDelete}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+              >
+                <DialogTitle id="alert-dialog-title">
+                  {"Use Google's location service?"}
+                </DialogTitle>
+                <DialogContent>
+                  <DialogContentText id="alert-dialog-description">
+                    Let Google help apps determine location. This means sending anonymous
+                    location data to Google, even when no apps are running.
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={handleCloseDelete}>Disagree</Button>
+                  <Button onClick={() => {handleDeleteColor(colorID, color._id)}} autoFocus>
+                    Agree
+                  </Button>
+                </DialogActions>
+              </Dialog>
+            </div>
+          </div>
+        </>
       ))}
     </div>
   );
