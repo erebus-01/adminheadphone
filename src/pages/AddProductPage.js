@@ -202,6 +202,45 @@ export default function AddProductPage() {
     }
   }
 
+  const handleUpdateProduct = async (event) => {
+    event.preventDefault()
+    const filteredBenefit = selectedProduct.benefit.filter(Boolean);
+    const filteredDescription = selectedProduct.description.filter(Boolean);
+    const nameFixed = selectedProduct.name.replace(/\n/g, '');
+    const subtitlesFixed = selectedProduct.subtitles.replace(/\n/g, '');
+    const imageFixed = selectedProduct.image.replace(/[ \t\n]+/g, '');
+
+    const updatedProduct = {
+      ...selectedProduct,
+      name: nameFixed,
+      subtitles: subtitlesFixed,
+      image: imageFixed,
+      benefit: filteredBenefit,
+      description: filteredDescription,
+    };
+
+    const response = await fetch(`${baseURL}/product`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedProduct),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    const data = await response.json()
+    console.log(data)
+    
+    navigate('/dashboard/products')
+    setOpenPopup(true);
+    setOpenModalUpdate(false);
+    setMessage(data.message);
+    if(response.status === 201) {
+        setSeverity('success')
+    }
+    else {
+        setSeverity('error')
+    }
+}
+
   // #region ui
   useEffect(() => {
     const fetchProducts = async () => {
@@ -226,6 +265,7 @@ export default function AddProductPage() {
   };
 
 
+  const [selectedProduct, setSelectedProduct] = useState({});
 
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
@@ -235,7 +275,10 @@ export default function AddProductPage() {
   const handleCloseColorModal = () => setOpenColor(false);
 
   const [openModalUpdate, setOpenModalUpdate] = useState(false);
-  const handleOpenModalUpdate = () => setOpenModalUpdate(true);
+  const handleOpenModalUpdate = (row) => {
+    setOpenModalUpdate(true);
+    setSelectedProduct(row);
+  }
   const handleCloseModalUpdate = () => setOpenModalUpdate(false);
 
   const [openDelete, setOpenDelete] = useState(false);
@@ -376,30 +419,37 @@ export default function AddProductPage() {
               <Typography id="transition-modal-description" sx={{ mt: 2 }}>
                 Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
               </Typography>
-              <TextField fullWidth label="First Name" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Last Name"sx={{ mt: 2 }} />
-              <TextField fullWidth label="Email" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Username" sx={{ mt: 2 }} />
-              <Grid container spacing={2} sx={{ mt: 2 }}>
-                <Grid item xs={4}>
-                  <Button 
-                    variant="contained" 
-                    endIcon={<SendOutlinedIcon />} 
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Send
-                  </Button>
+              <form onSubmit={handleUpdateProduct}>
+                <input type="text" name='id' hidden value={selectedProduct?._id || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} />
+                <TextField name='name' value={selectedProduct?.name || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="Name" id="fullWidth" sx={{ mt: 2 }} />
+                <TextField name='subtitles' value={selectedProduct?.subtitles || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="Subtitles" id="fullWidth" sx={{ mt: 2 }} />
+                <TextField name='price' value={selectedProduct?.price || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="Price" type='number' id="fullWidth" sx={{ mt: 2 }} />
+                <TextField name='image' value={selectedProduct?.image || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="ImageURL" id="fullWidth" sx={{ mt: 2 }} />
+                <TextField name='benefit' value={selectedProduct?.benefit ? selectedProduct.benefit.join("\n") : ""} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value.split("\n") })} fullWidth label="Benefit" id="fullWidth" multiline minRows={6} maxRows={14} sx={{ mt: 2 }} />
+                <TextField name='description' value={selectedProduct?.description ? selectedProduct.description.join("\n") : ""} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value.split("\n") })} fullWidth label="DescriptionURL" id="fullWidth" multiline minRows={6} maxRows={14} sx={{ mt: 2 }} />
+                    
+                <Grid container spacing={2} sx={{ mt: 2 }}>
+                  <Grid item xs={4}>
+                    <Button 
+                      variant="contained" 
+                      type='submit'
+                      endIcon={<SendOutlinedIcon />} 
+                      style={{ width: "150px", height: "50px" }}
+                    >
+                      Send
+                    </Button>
+                  </Grid>
+                  <Grid item xs={6} container justify="flex-end">
+                    <Button 
+                      onClick={handleCloseModalUpdate}
+                      variant="outlined" 
+                      style={{ width: "150px", height: "50px" }}
+                    >
+                      Cancel
+                    </Button>
+                  </Grid>
                 </Grid>
-                <Grid item xs={6} container justify="flex-end">
-                  <Button 
-                    onClick={handleCloseModalUpdate}
-                    variant="outlined" 
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Cancel
-                  </Button>
-                </Grid>
-              </Grid>
+              </form>
             </Box>
           </Fade>
         </Modal>
@@ -542,7 +592,7 @@ export default function AddProductPage() {
                       <Grid item xs={2} sx={{mr: 1}}>
                         <Button 
                           variant="contained"
-                          type='submit' 
+                          onClick={() => {handleOpenModalUpdate(row)}}
                           endIcon={<EditIcon />} 
                           style={{ width: "150px", height: "50px", backgroundColor: teal[600] }}
                         >

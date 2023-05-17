@@ -42,6 +42,8 @@ import {
   Select,
   FormGroup,
 } from '@mui/material';
+import { red, teal } from '@mui/material/colors';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import EditIcon from '@mui/icons-material/Edit';
@@ -148,7 +150,8 @@ export default function AdminPage() {
 
   const [form, setForm] = useState({})
   const [formUpdate, setFormUpdate] = useState({})
-  const [idUpdate, sections] = useState('')
+  
+  const [selectedProduct, setSelectedProduct] = useState({});
 
   
   const [openPopup, setOpenPopup] = useState(false);
@@ -156,11 +159,16 @@ export default function AdminPage() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    axios.get(`${baseURL}/admin`).then((res) => {
-      console.log(res.data.json);
-      setUsers(res.data.json); 
-    })
-  }, [])
+    const fetchAdmin = async () => {
+      try {
+        const response = await axios.get(`${baseURL}/admin`)
+        setUsers(response.data.json);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    fetchAdmin();
+  }, [users])
 
   const handleForm = (e) => {
     setForm({
@@ -211,6 +219,48 @@ export default function AdminPage() {
       setSeverity('error')
     }
   }
+
+  const handleDeleteAdmin = async (_id) => {
+    const response = await fetch(`${baseURL}/admin/${_id}`, {
+        method: 'DELETE',
+    })
+    const data = await response.json()
+    
+    navigate('/dashboard/admin')
+    setOpenPopup(true);
+    setOpen(false);
+    setMessage(data.message);
+    if(response.status === 201) {
+        setSeverity('success')
+    }
+    else {
+        setSeverity('error')
+    }
+}
+const handleUpdateAdmin = async (event) => {
+    event.preventDefault()
+    console.log(selectedProduct)
+    const response = await fetch(`${baseURL}/post`, {
+        method: 'PUT',
+        body: JSON.stringify(selectedProduct),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    const data = await response.json()
+    
+    navigate('/dashboard/blog')
+    setOpenPopup(true);
+    setOpenModalUpdate(false);
+    setMessage(data.message);
+    if(response.status === 201) {
+        setSeverity('success')
+    }
+    else {
+        setSeverity('error')
+    }
+}
+
 
 // #region ui
   const handleOpenMenu = (event) => {
@@ -584,40 +634,25 @@ export default function AdminPage() {
                             <Label color={(verify ? 'success' : 'error')}>{(verify ? 'Active' : 'Unactive')}</Label>
                           </TableCell>
                        
-                        <TableCell align="right">
-                          <input type="text" hidden value={_id} />
-                          <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
-                            <Iconify icon={'eva:more-vertical-fill'} />
-                          </IconButton>
-                        </TableCell>
-                        <Popover
-                          open={Boolean(open)}
-                          anchorEl={open}
-                          onClose={handleCloseMenu}
-                          anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-                          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                          PaperProps={{
-                            sx: {
-                              p: 1,
-                              width: 140,
-                              '& .MuiMenuItem-root': {
-                                px: 1,
-                                typography: 'body2',
-                                borderRadius: 0.75,
-                              },
-                            },
-                          }}
-                        >
-                          <MenuItem onClick={handleOpenModalUpdate}>
-                            <Iconify icon={'eva:edit-fill'} sx={{ mr: 2 }} />
-                            <Link to={`/update/${_id}`}>Update</Link>
-                          </MenuItem>
+                          <TableCell>
+                            {/* <Button 
+                            variant="contained"
+                            onClick={() => handleOpenModalUpdate(row)}
+                            endIcon={<EditIcon />} 
+                            style={{ width: "100px", height: "50px", backgroundColor: teal[600] }}
+                            >
+                                Update
+                            </Button> */}
 
-                          <MenuItem onClick={handleOpenDelete} sx={{ color: 'error.main' }}>
-                            <Iconify icon={'eva:trash-2-outline'} sx={{ mr: 2 }} />
-                            Delete
-                          </MenuItem>
-                        </Popover>
+                            <Button 
+                            onClick={() => {handleDeleteAdmin(_id)}}
+                            variant="contained" 
+                            endIcon={<DeleteIcon />}
+                            style={{ width: "100px", height: "50px", backgroundColor: red[800], marginTop: '20px' }}
+                            >
+                                Delete
+                            </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })}

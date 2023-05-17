@@ -35,6 +35,9 @@ import {
   DialogContentText,
   DialogTitle
 } from '@mui/material';
+import { red, teal } from '@mui/material/colors';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
@@ -106,7 +109,9 @@ export default function AddBlogPage() {
     const navigate = useNavigate();
     const [open, setOpen] = useState(null);
     const [form, setForm] = useState({});
+    const [formUpdated, setFormUpdated] = useState({})
     const [blogs, setBlogs] = useState([])
+    const [selectedProduct, setSelectedProduct] = useState({});
     
 
     const [openPopup, setOpenPopup] = useState(false);
@@ -114,11 +119,23 @@ export default function AddBlogPage() {
     const [message, setMessage] = useState('');
 
     useEffect(() => {
-        axios.get(`${baseURL}/posts`).then((res) => {
-        console.log(res.data.json);
-        setBlogs(res.data.json); 
-        })
+        const fetchPosts = async () => {
+            try {
+                const response = await axios.get(`${baseURL}/posts`)
+                setBlogs(response.data.json); 
+            } catch (error) {
+                console.error(error);
+            }
+        };
+        fetchPosts();
     }, [blogs])
+
+    const [openModalUpdate, setOpenModalUpdate] = useState(false);
+    const handleOpenModalUpdate = (row) => {
+        setOpenModalUpdate(true);
+        setSelectedProduct(row);
+    }
+    const handleCloseModalUpdate = () => setOpenModalUpdate(false);
 
   //  #region ui
   const [page, setPage] = useState(0);
@@ -136,10 +153,6 @@ export default function AddBlogPage() {
   const [openModal, setOpenModal] = useState(false);
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
-
-  const [openModalUpdate, setOpenModalUpdate] = useState(false);
-  const handleOpenModalUpdate = () => setOpenModalUpdate(true);
-  const handleCloseModalUpdate = () => setOpenModalUpdate(false);
 
   const [openDelete, setOpenDelete] = useState(false);
   const handleOpenDelete = () => setOpenDelete(true);
@@ -212,43 +225,50 @@ export default function AddBlogPage() {
   const filteredUsers = applySortFilter(blogs, getComparator(order, orderBy), filterName);
 
   const isNotFound = !filteredUsers.length && !!filterName;
+
   // #endregion
 
-  const handleForm = (e) => {
-    setForm({
-        ...form,
-        [e.target.name]: e.target.value
-    })
-  }
+    const handleForm = (e) => {
+        setForm({
+            ...form,
+            [e.target.name]: e.target.value
+        })
+    }
 
-  const handleSubmitForm = async (e) => {
-    e.preventDefault();
-    const response = await fetch(`${baseURL}/post`, {
-      method: 'POST',
-      body: JSON.stringify(form),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    const data = await response.json()
-    
-    navigate('/dashboard/blog')
-    setOpenPopup(true);
-    setMessage(data.message);
-    if(response.status === 201) {
-        setSeverity('success')
+    const handleFormUpdate = (e) => {
+        setFormUpdated({
+            ...formUpdated,
+            [e.target.name]: e.target.value
+        })
     }
-    else {
-        setSeverity('error')
+
+    const handleSubmitForm = async (e) => {
+        e.preventDefault();
+        const response = await fetch(`${baseURL}/post`, {
+            method: 'POST',
+            body: JSON.stringify(form),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        const data = await response.json()
+        
+        navigate('/dashboard/blog')
+        setOpenPopup(true);
+        setMessage(data.message);
+        if(response.status === 201) {
+            setSeverity('success')
+        }
+        else {
+            setSeverity('error')
+        }
     }
-  }
 
     const handleDeleteBlog = async (_id) => {
         const response = await fetch(`${baseURL}/post/${_id}`, {
             method: 'DELETE',
         })
         const data = await response.json()
-        console.log(data)
         
         navigate('/dashboard/blog')
         setOpenPopup(true);
@@ -261,7 +281,29 @@ export default function AddBlogPage() {
             setSeverity('error')
         }
     }
-
+    const handleUpdatePost = async (event) => {
+        event.preventDefault()
+        console.log(selectedProduct)
+        const response = await fetch(`${baseURL}/post`, {
+            method: 'PUT',
+            body: JSON.stringify(selectedProduct),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        const data = await response.json()
+        
+        navigate('/dashboard/blog')
+        setOpenPopup(true);
+        setOpenModalUpdate(false);
+        setMessage(data.message);
+        if(response.status === 201) {
+            setSeverity('success')
+        }
+        else {
+            setSeverity('error')
+        }
+    }
   return (
     <>
       <Helmet>
@@ -352,36 +394,41 @@ export default function AddBlogPage() {
         >
           <Fade in={openModalUpdate}>
             <Box sx={style}>
-              <Typography id="transition-modal-title" variant="h3" component="h2">
-                Update user profile
-              </Typography>
-              <Typography id="transition-modal-description" sx={{ mt: 2 }}>
-                Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
-              </Typography>
-              <TextField fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Last Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Email" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Username" id="fullWidth" sx={{ mt: 2 }} />
-              <Grid container spacing={2} sx={{ mt: 2 }}>
-                <Grid item xs={4}>
-                  <Button 
-                    variant="contained" 
-                    endIcon={<SendOutlinedIcon />} 
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Send
-                  </Button>
-                </Grid>
-                <Grid item xs={6} container justify="flex-end">
-                  <Button 
-                    onClick={handleCloseModalUpdate}
-                    variant="outlined" 
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Cancel
-                  </Button>
-                </Grid>
-              </Grid>
+                <Typography id="transition-modal-title" variant="h3" component="h2">
+                    Update user profile
+                </Typography>
+                <Typography id="transition-modal-description" sx={{ mt: 2 }}>
+                    Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
+                </Typography>
+                <form onSubmit={handleUpdatePost}>
+                    <input type="text" name='id' hidden value={selectedProduct?._id || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} />
+                    <TextField name='title' value={selectedProduct?.title || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
+                    <TextField name='author' value={selectedProduct?.author || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
+                    <TextField name='topic' value={selectedProduct?.topic || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
+                    <TextField name='image' value={selectedProduct?.image || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
+                    <TextField name='content' value={selectedProduct?.content || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" multiline minRows={10} maxRows={16} sx={{ mt: 2 }} />
+                    <Grid container spacing={2} sx={{ mt: 2 }}>
+                        <Grid item xs={4}>
+                        <Button 
+                            variant="contained" 
+                            type='submit' 
+                            endIcon={<SendOutlinedIcon />} 
+                            style={{ width: "150px", height: "50px" }}
+                        >
+                            Send
+                        </Button>
+                        </Grid>
+                        <Grid item xs={6} container justify="flex-end">
+                        <Button 
+                            onClick={handleCloseModalUpdate}
+                            variant="outlined" 
+                            style={{ width: "150px", height: "50px" }}
+                        >
+                            Cancel
+                        </Button>
+                        </Grid>
+                    </Grid>
+                </form>
             </Box>
           </Fade>
         </Modal>
@@ -454,39 +501,25 @@ export default function AddBlogPage() {
                         </TableCell>
                         <TableCell align="left">{content}</TableCell>
 
-                        <TableCell align="right">
-                          <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
-                            <Iconify icon={'eva:more-vertical-fill'} />
-                          </IconButton>
-                        </TableCell>
-                        <Popover
-                            open={Boolean(open)}
-                            anchorEl={open}
-                            onClose={handleCloseMenu}
-                            anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-                            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                            PaperProps={{
-                            sx: {
-                                p: 1,
-                                width: 140,
-                                '& .MuiMenuItem-root': {
-                                px: 1,
-                                typography: 'body2',
-                                borderRadius: 0.75,
-                                },
-                            },
-                            }}
-                        >
-                            <MenuItem onClick={handleOpenModalUpdate}>
-                            <Iconify icon={'eva:edit-fill'} sx={{ mr: 2 }} />
-                                Edit
-                            </MenuItem>
+                        <TableCell>
+                            <Button 
+                            variant="contained"
+                            onClick={() => handleOpenModalUpdate(row)}
+                            endIcon={<EditIcon />} 
+                            style={{ width: "100px", height: "50px", backgroundColor: teal[600] }}
+                            >
+                                Update
+                            </Button>
 
-                            <MenuItem onClick={() => {handleDeleteBlog(_id)}} sx={{ color: 'error.main' }}>
-                                <Iconify icon={'eva:trash-2-outline'} sx={{ mr: 2 }} />
-                                    Delete
-                            </MenuItem>
-                        </Popover>
+                            <Button 
+                            onClick={() => {handleDeleteBlog(_id)}}
+                            variant="contained" 
+                            endIcon={<DeleteIcon />}
+                            style={{ width: "100px", height: "50px", backgroundColor: red[800], marginTop: '20px' }}
+                            >
+                                Delete
+                            </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
