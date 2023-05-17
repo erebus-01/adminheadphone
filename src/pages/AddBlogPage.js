@@ -106,36 +106,36 @@ function applySortFilter(array, comparator, query) {
 }
 
 export default function AddBlogPage() {
-    const navigate = useNavigate();
-    const [open, setOpen] = useState(null);
-    const [form, setForm] = useState({});
-    const [formUpdated, setFormUpdated] = useState({})
-    const [blogs, setBlogs] = useState([])
-    const [selectedProduct, setSelectedProduct] = useState({});
-    
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(null);
+  const [form, setForm] = useState({});
+  const [formUpdated, setFormUpdated] = useState({})
+  const [blogs, setBlogs] = useState([])
+  const [selectedProduct, setSelectedProduct] = useState({});
 
-    const [openPopup, setOpenPopup] = useState(false);
-    const [severity, setSeverity] = useState('');
-    const [message, setMessage] = useState('');
 
-    useEffect(() => {
-        const fetchPosts = async () => {
-            try {
-                const response = await axios.get(`${baseURL}/posts`)
-                setBlogs(response.data.json); 
-            } catch (error) {
-                console.error(error);
-            }
-        };
-        fetchPosts();
-    }, [blogs])
+  const [openPopup, setOpenPopup] = useState(false);
+  const [severity, setSeverity] = useState('');
+  const [message, setMessage] = useState('');
 
-    const [openModalUpdate, setOpenModalUpdate] = useState(false);
-    const handleOpenModalUpdate = (row) => {
-        setOpenModalUpdate(true);
-        setSelectedProduct(row);
-    }
-    const handleCloseModalUpdate = () => setOpenModalUpdate(false);
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get(`${baseURL}/posts`)
+        setBlogs(response.data.json);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchPosts();
+  }, [blogs])
+
+  const [openModalUpdate, setOpenModalUpdate] = useState(false);
+  const handleOpenModalUpdate = (row) => {
+    setOpenModalUpdate(true);
+    setSelectedProduct(row);
+  }
+  const handleCloseModalUpdate = () => setOpenModalUpdate(false);
 
   //  #region ui
   const [page, setPage] = useState(0);
@@ -228,89 +228,89 @@ export default function AddBlogPage() {
 
   // #endregion
 
-    const handleForm = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value
-        })
-    }
+  const handleForm = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    })
+  }
 
-    const handleFormUpdate = (e) => {
-        setFormUpdated({
-            ...formUpdated,
-            [e.target.name]: e.target.value
-        })
-    }
+  const handleFormUpdate = (e) => {
+    setFormUpdated({
+      ...formUpdated,
+      [e.target.name]: e.target.value
+    })
+  }
 
-    const handleSubmitForm = async (e) => {
-        e.preventDefault();
-        const response = await fetch(`${baseURL}/post`, {
-            method: 'POST',
-            body: JSON.stringify(form),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        const data = await response.json()
-        
-        navigate('/dashboard/blog')
-        setOpenPopup(true);
-        setMessage(data.message);
-        if(response.status === 201) {
-            setSeverity('success')
-        }
-        else {
-            setSeverity('error')
-        }
-    }
+  const handleSubmitForm = async (e) => {
+    e.preventDefault();
+    const response = await fetch(`${baseURL}/post`, {
+      method: 'POST',
+      body: JSON.stringify(form),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await response.json()
 
-    const handleDeleteBlog = async (_id) => {
-        const response = await fetch(`${baseURL}/post/${_id}`, {
-            method: 'DELETE',
-        })
-        const data = await response.json()
-        
-        navigate('/dashboard/blog')
-        setOpenPopup(true);
-        setOpen(false);
-        setMessage(data.message);
-        if(response.status === 201) {
-            setSeverity('success')
-        }
-        else {
-            setSeverity('error')
-        }
+    navigate('/dashboard/blog')
+    setOpenPopup(true);
+    setMessage(data.message);
+    if (response.status === 201) {
+      setSeverity('success')
     }
-    const handleUpdatePost = async (event) => {
-        event.preventDefault()
-        console.log(selectedProduct)
-        const response = await fetch(`${baseURL}/post`, {
-            method: 'PUT',
-            body: JSON.stringify(selectedProduct),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        const data = await response.json()
-        
-        navigate('/dashboard/blog')
-        setOpenPopup(true);
-        setOpenModalUpdate(false);
-        setMessage(data.message);
-        if(response.status === 201) {
-            setSeverity('success')
-        }
-        else {
-            setSeverity('error')
-        }
+    else {
+      setSeverity('error')
     }
+  }
+
+  const handleDeleteBlog = async (_id) => {
+    const response = await fetch(`${baseURL}/post/${_id}`, {
+      method: 'DELETE',
+    })
+    const data = await response.json()
+
+    navigate('/dashboard/blog')
+    setOpenPopup(true);
+    setOpen(false);
+    setMessage(data.message);
+    if (response.status === 201) {
+      setSeverity('success')
+    }
+    else {
+      setSeverity('error')
+    }
+  }
+  const handleUpdatePost = async (event) => {
+    event.preventDefault()
+    console.log(selectedProduct)
+    const response = await fetch(`${baseURL}/post`, {
+      method: 'PUT',
+      body: JSON.stringify(selectedProduct),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await response.json()
+
+    navigate('/dashboard/blog')
+    setOpenPopup(true);
+    setOpenModalUpdate(false);
+    setMessage(data.message);
+    if (response.status === 201) {
+      setSeverity('success')
+    }
+    else {
+      setSeverity('error')
+    }
+  }
   return (
     <>
       <Helmet>
         <title> User | Minimal UI </title>
       </Helmet>
 
-      <Container sx={{display: 'grid', placeContent: 'center' }}>
+      <Container sx={{ display: 'grid', placeContent: 'center' }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
           <Typography variant="h4" gutterBottom>
             Blog
@@ -320,7 +320,7 @@ export default function AddBlogPage() {
           </Button>
         </Stack>
 
-        {openPopup &&       
+        {openPopup &&
           <Snackbar open={openPopup} autoHideDuration={3000} onClose={handleClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
             <Alert severity={severity} sx={{ width: '100%' }}>
               {message}
@@ -355,25 +355,25 @@ export default function AddBlogPage() {
                 <TextField fullWidth name='image' label="Image" id="fullWidth" sx={{ mt: 2 }} onChange={handleForm} required />
                 <TextField fullWidth name='content' label="Content" id="fullWidth" sx={{ mt: 2 }} multiline minRows={4} maxRows={14} onChange={handleForm} required />
                 <Grid container spacing={2} sx={{ mt: 2 }}>
-                    <Grid item xs={4}>
-                        <Button 
-                            variant="contained" 
-                            type="submit"
-                            endIcon={<SendOutlinedIcon />} 
-                            style={{ width: "150px", height: "50px" }}
-                        >
-                            Send
-                        </Button>
-                    </Grid>
-                    <Grid item xs={6} container justify="flex-end">
-                        <Button 
-                            onClick={handleCloseModal}
-                            variant="outlined" 
-                            style={{ width: "150px", height: "50px" }}
-                        >
-                            Cancel
-                        </Button>
-                    </Grid>
+                  <Grid item xs={4}>
+                    <Button
+                      variant="contained"
+                      type="submit"
+                      endIcon={<SendOutlinedIcon />}
+                      style={{ width: "150px", height: "50px" }}
+                    >
+                      Send
+                    </Button>
+                  </Grid>
+                  <Grid item xs={6} container justify="flex-end">
+                    <Button
+                      onClick={handleCloseModal}
+                      variant="outlined"
+                      style={{ width: "150px", height: "50px" }}
+                    >
+                      Cancel
+                    </Button>
+                  </Grid>
                 </Grid>
               </form>
             </Box>
@@ -394,41 +394,41 @@ export default function AddBlogPage() {
         >
           <Fade in={openModalUpdate}>
             <Box sx={style}>
-                <Typography id="transition-modal-title" variant="h3" component="h2">
-                    Update user profile
-                </Typography>
-                <Typography id="transition-modal-description" sx={{ mt: 2 }}>
-                    Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
-                </Typography>
-                <form onSubmit={handleUpdatePost}>
-                    <input type="text" name='id' hidden value={selectedProduct?._id || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} />
-                    <TextField name='title' value={selectedProduct?.title || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
-                    <TextField name='author' value={selectedProduct?.author || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
-                    <TextField name='topic' value={selectedProduct?.topic || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
-                    <TextField name='image' value={selectedProduct?.image || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
-                    <TextField name='content' value={selectedProduct?.content || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" multiline minRows={10} maxRows={16} sx={{ mt: 2 }} />
-                    <Grid container spacing={2} sx={{ mt: 2 }}>
-                        <Grid item xs={4}>
-                        <Button 
-                            variant="contained" 
-                            type='submit' 
-                            endIcon={<SendOutlinedIcon />} 
-                            style={{ width: "150px", height: "50px" }}
-                        >
-                            Send
-                        </Button>
-                        </Grid>
-                        <Grid item xs={6} container justify="flex-end">
-                        <Button 
-                            onClick={handleCloseModalUpdate}
-                            variant="outlined" 
-                            style={{ width: "150px", height: "50px" }}
-                        >
-                            Cancel
-                        </Button>
-                        </Grid>
-                    </Grid>
-                </form>
+              <Typography id="transition-modal-title" variant="h3" component="h2">
+                Update user profile
+              </Typography>
+              <Typography id="transition-modal-description" sx={{ mt: 2 }}>
+                Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
+              </Typography>
+              <form onSubmit={handleUpdatePost}>
+                <input type="text" name='id' hidden value={selectedProduct?._id || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} />
+                <TextField name='title' value={selectedProduct?.title || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
+                <TextField name='author' value={selectedProduct?.author || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
+                <TextField name='topic' value={selectedProduct?.topic || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
+                <TextField name='image' value={selectedProduct?.image || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
+                <TextField name='content' value={selectedProduct?.content || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="First Name" id="fullWidth" multiline minRows={10} maxRows={16} sx={{ mt: 2 }} />
+                <Grid container spacing={2} sx={{ mt: 2 }}>
+                  <Grid item xs={4}>
+                    <Button
+                      variant="contained"
+                      type='submit'
+                      endIcon={<SendOutlinedIcon />}
+                      style={{ width: "150px", height: "50px" }}
+                    >
+                      Send
+                    </Button>
+                  </Grid>
+                  <Grid item xs={6} container justify="flex-end">
+                    <Button
+                      onClick={handleCloseModalUpdate}
+                      variant="outlined"
+                      style={{ width: "150px", height: "50px" }}
+                    >
+                      Cancel
+                    </Button>
+                  </Grid>
+                </Grid>
+              </form>
             </Box>
           </Fade>
         </Modal>
@@ -456,7 +456,7 @@ export default function AddBlogPage() {
           </DialogActions>
         </Dialog>
 
-        <Card sx={{width: '1400px'}}>
+        <Card sx={{ width: '1400px' }}>
           <UserListToolbar numSelected={selected.length} filterName={filterName} onFilterName={handleFilterByName} />
 
           <Scrollbar>
@@ -483,7 +483,7 @@ export default function AddBlogPage() {
                         </TableCell>
 
                         <TableCell align="left">
-                            <img src={image} alt={title} loading="lazy" style={{ width: '80%', flexShrink: 0, borderRadius: 10, marginRight: 10 }} />
+                          <img src={image} alt={title} loading="lazy" style={{ width: '80%', flexShrink: 0, borderRadius: 10, marginRight: 10 }} />
                         </TableCell>
 
                         <TableCell component="th" scope="row" padding="none">
@@ -497,28 +497,28 @@ export default function AddBlogPage() {
 
                         <TableCell align="left">{author}</TableCell>
                         <TableCell align="left">
-                            <img src={topic} alt={author} loading="lazy" style={{ width: '50%', flexShrink: 0, borderRadius: 10, marginRight: 10 }} />
+                          <img src={topic} alt={author} loading="lazy" style={{ width: '50%', flexShrink: 0, borderRadius: 10, marginRight: 10 }} />
                         </TableCell>
                         <TableCell align="left">{content}</TableCell>
 
                         <TableCell>
-                            <Button 
+                          <Button
                             variant="contained"
                             onClick={() => handleOpenModalUpdate(row)}
-                            endIcon={<EditIcon />} 
+                            endIcon={<EditIcon />}
                             style={{ width: "100px", height: "50px", backgroundColor: teal[600] }}
-                            >
-                                Update
-                            </Button>
+                          >
+                            Update
+                          </Button>
 
-                            <Button 
-                            onClick={() => {handleDeleteBlog(_id)}}
-                            variant="contained" 
+                          <Button
+                            onClick={() => { handleDeleteBlog(_id) }}
+                            variant="contained"
                             endIcon={<DeleteIcon />}
                             style={{ width: "100px", height: "50px", backgroundColor: red[800], marginTop: '20px' }}
-                            >
-                                Delete
-                            </Button>
+                          >
+                            Delete
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );

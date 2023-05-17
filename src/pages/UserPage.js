@@ -154,7 +154,7 @@ export default function UserPage() {
     setOpen(event.currentTarget);
   };
 
-// #region ui
+  // #region ui
   const handleCloseMenu = () => {
     setOpen(null);
   };
@@ -255,19 +255,19 @@ export default function UserPage() {
                 <TextField fullWidth name='cfpassword' label="Confirm Password" type='password' id="cfpassword" sx={{ mt: 2 }} onChange={handleForm} />
                 <Grid container spacing={2} sx={{ mt: 2 }}>
                   <Grid item xs={4}>
-                    <Button 
-                      variant="contained" 
+                    <Button
+                      variant="contained"
                       type='submit'
-                      endIcon={<SendOutlinedIcon />} 
+                      endIcon={<SendOutlinedIcon />}
                       style={{ width: "150px", height: "50px" }}
                     >
                       Send
                     </Button>
                   </Grid>
                   <Grid item xs={6} container justify="flex-end">
-                    <Button 
+                    <Button
                       onClick={handleCloseModal}
-                      variant="outlined" 
+                      variant="outlined"
                       style={{ width: "150px", height: "50px" }}
                     >
                       Cancel
@@ -305,18 +305,18 @@ export default function UserPage() {
               <TextField fullWidth label="Username" id="fullWidth" sx={{ mt: 2 }} />
               <Grid container spacing={2} sx={{ mt: 2 }}>
                 <Grid item xs={4}>
-                  <Button 
-                    variant="contained" 
-                    endIcon={<SendOutlinedIcon />} 
+                  <Button
+                    variant="contained"
+                    endIcon={<SendOutlinedIcon />}
                     style={{ width: "150px", height: "50px" }}
                   >
                     Send
                   </Button>
                 </Grid>
                 <Grid item xs={6} container justify="flex-end">
-                  <Button 
+                  <Button
                     onClick={handleCloseModalUpdate}
-                    variant="outlined" 
+                    variant="outlined"
                     style={{ width: "150px", height: "50px" }}
                   >
                     Cancel

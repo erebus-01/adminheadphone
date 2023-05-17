@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { filter } from 'lodash';
-import { useNavigate  } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import axios from "axios";
 // @mui
@@ -110,8 +110,8 @@ export default function AddProductPage() {
 
   const [openModal, setOpenModal] = useState(false);
 
-  const [products, setProducts] = useState([]); 
-  
+  const [products, setProducts] = useState([]);
+
   const [openPopup, setOpenPopup] = useState(false);
   const [severity, setSeverity] = useState('');
   const [message, setMessage] = useState('');
@@ -138,7 +138,7 @@ export default function AddProductPage() {
       }
     })
     const data = await response.json()
-    if(response.status === 201) {
+    if (response.status === 201) {
       navigate('/dashboard/products')
       setOpenModal(false);
       setOpenPopup(true);
@@ -151,7 +151,7 @@ export default function AddProductPage() {
       setSeverity('error')
     }
   }
-  
+
   const handleColorForm = (e) => {
     setFormColor({
       ...formColor,
@@ -169,7 +169,7 @@ export default function AddProductPage() {
       }
     })
     const data = await response.json();
-    if(response.status === 201) {
+    if (response.status === 201) {
       navigate('/dashboard/products')
       setOpenColor(false);
       setOpenPopup(true);
@@ -189,7 +189,7 @@ export default function AddProductPage() {
       method: 'DELETE',
     })
     const data = await response.json()
-    if(response.status === 201) {
+    if (response.status === 201) {
       navigate('/dashboard/products')
       setOpenPopup(true);
       setMessage(data.message);
@@ -220,26 +220,26 @@ export default function AddProductPage() {
     };
 
     const response = await fetch(`${baseURL}/product`, {
-        method: 'PUT',
-        body: JSON.stringify(updatedProduct),
-        headers: {
-            'Content-Type': 'application/json'
-        }
+      method: 'PUT',
+      body: JSON.stringify(updatedProduct),
+      headers: {
+        'Content-Type': 'application/json'
+      }
     })
     const data = await response.json()
     console.log(data)
-    
+
     navigate('/dashboard/products')
     setOpenPopup(true);
     setOpenModalUpdate(false);
     setMessage(data.message);
-    if(response.status === 201) {
-        setSeverity('success')
+    if (response.status === 201) {
+      setSeverity('success')
     }
     else {
-        setSeverity('error')
+      setSeverity('error')
     }
-}
+  }
 
   // #region ui
   useEffect(() => {
@@ -338,7 +338,7 @@ export default function AddProductPage() {
             New Product
           </Button>
         </Stack>
-        {openPopup &&       
+        {openPopup &&
           <Snackbar open={openPopup} autoHideDuration={5000} onClose={handleClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
             <Alert severity={severity} sx={{ width: '100%' }}>
               {message}
@@ -368,26 +368,26 @@ export default function AddProductPage() {
               </Typography>
               <form onSubmit={handleSubmitForm}>
                 <TextField fullWidth name='name' label="Name" id="name" sx={{ mt: 2 }} onChange={handleForm} required />
-                <TextField fullWidth name='subtitles' label="Subtitles" id="subtitles" sx={{ mt: 2 }} onChange={handleForm} required  />
-                <TextField fullWidth name='image' label="ImageURL" id="image" sx={{ mt: 2 }} onChange={handleForm} required  />
-                <TextField fullWidth name='benefit' label="Benefit" id="benefit" sx={{ mt: 2 }} onChange={handleForm} multiline rows={5} required  />
-                <TextField fullWidth name='price' label="Price" type='number' id="price" sx={{ mt: 2 }} onChange={handleForm} required  />
-                <TextField fullWidth name='description' label="DescriptionURL" id="description" sx={{ mt: 2 }} onChange={handleForm} multiline rows={5} required  />
+                <TextField fullWidth name='subtitles' label="Subtitles" id="subtitles" sx={{ mt: 2 }} onChange={handleForm} required />
+                <TextField fullWidth name='image' label="ImageURL" id="image" sx={{ mt: 2 }} onChange={handleForm} required />
+                <TextField fullWidth name='benefit' label="Benefit" id="benefit" sx={{ mt: 2 }} onChange={handleForm} multiline rows={5} required />
+                <TextField fullWidth name='price' label="Price" type='number' id="price" sx={{ mt: 2 }} onChange={handleForm} required />
+                <TextField fullWidth name='description' label="DescriptionURL" id="description" sx={{ mt: 2 }} onChange={handleForm} multiline rows={5} required />
                 <Grid container spacing={2} sx={{ mt: 2 }}>
                   <Grid item xs={2}>
-                    <Button 
-                      variant="contained" 
+                    <Button
+                      variant="contained"
                       type='submit'
-                      endIcon={<SendOutlinedIcon />} 
+                      endIcon={<SendOutlinedIcon />}
                       style={{ width: "150px", height: "50px" }}
                     >
                       Send
                     </Button>
                   </Grid>
                   <Grid item xs={2} container justify="flex-end">
-                    <Button 
+                    <Button
                       onClick={handleCloseModal}
-                      variant="outlined" 
+                      variant="outlined"
                       style={{ width: "150px", height: "50px" }}
                     >
                       Cancel
@@ -427,22 +427,22 @@ export default function AddProductPage() {
                 <TextField name='image' value={selectedProduct?.image || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="ImageURL" id="fullWidth" sx={{ mt: 2 }} />
                 <TextField name='benefit' value={selectedProduct?.benefit ? selectedProduct.benefit.join("\n") : ""} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value.split("\n") })} fullWidth label="Benefit" id="fullWidth" multiline minRows={6} maxRows={14} sx={{ mt: 2 }} />
                 <TextField name='description' value={selectedProduct?.description ? selectedProduct.description.join("\n") : ""} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value.split("\n") })} fullWidth label="DescriptionURL" id="fullWidth" multiline minRows={6} maxRows={14} sx={{ mt: 2 }} />
-                    
+
                 <Grid container spacing={2} sx={{ mt: 2 }}>
                   <Grid item xs={4}>
-                    <Button 
-                      variant="contained" 
+                    <Button
+                      variant="contained"
                       type='submit'
-                      endIcon={<SendOutlinedIcon />} 
+                      endIcon={<SendOutlinedIcon />}
                       style={{ width: "150px", height: "50px" }}
                     >
                       Send
                     </Button>
                   </Grid>
                   <Grid item xs={6} container justify="flex-end">
-                    <Button 
+                    <Button
                       onClick={handleCloseModalUpdate}
-                      variant="outlined" 
+                      variant="outlined"
                       style={{ width: "150px", height: "50px" }}
                     >
                       Cancel
@@ -476,7 +476,7 @@ export default function AddProductPage() {
             </Button>
           </DialogActions>
         </Dialog>
-              
+
         <Card>
           <UserListToolbar numSelected={selected.length} filterName={filterName} onFilterName={handleFilterByName} />
 
@@ -486,14 +486,14 @@ export default function AddProductPage() {
               const selectedUser = selected.indexOf(name) !== -1;
 
               return (
-                <Accordion fullwidth="true" key={_id} expanded={expanded === _id} onChange={handleChange(_id)} sx={{padding: 3}}>
+                <Accordion fullwidth="true" key={_id} expanded={expanded === _id} onChange={handleChange(_id)} sx={{ padding: 3 }}>
                   <AccordionSummary
                     expandIcon={<ExpandMoreIcon />}
                     aria-controls="panel1bh-content"
                     id="panel1bh-header"
                   >
                     <img src={image} alt={name} loading="lazy" style={{ width: '7%', flexShrink: 0, borderRadius: 10, marginRight: 10 }} />
-                    <div style={{width: '80%', flexShrink: 0}}>
+                    <div style={{ width: '80%', flexShrink: 0 }}>
                       <Typography sx={{ fontSize: '20px', fontWeight: '700' }}>
                         {name}
                       </Typography>
@@ -503,7 +503,7 @@ export default function AddProductPage() {
                   </AccordionSummary>
                   <AccordionDetails>
                     <div>
-                      <ul style={{marginLeft: 30}}>
+                      <ul style={{ marginLeft: 30 }}>
                         {benefit.map((benefit, index) => (
                           <li key={index}>{benefit}</li>
                         ))}
@@ -511,11 +511,11 @@ export default function AddProductPage() {
                     </div>
                     <Grid container sx={{ mt: 1 }}>
                       <Grid item>
-                        <Button 
+                        <Button
                           variant="contained"
-                          type='submit' 
+                          type='submit'
                           onClick={handleOpenColorModal}
-                          endIcon={<ColorLensIcon />} 
+                          endIcon={<ColorLensIcon />}
                           style={{ width: "150px", height: "50px" }}
                         >
                           Add Color
@@ -547,22 +547,22 @@ export default function AddProductPage() {
                             <TextField fullWidth name='name' label="Name" id="name" sx={{ mt: 2 }} required onChange={handleColorForm} />
                             <TextField fullWidth name='color' label="Color" id="color" type='color' required sx={{ mt: 2, width: '150px' }} onChange={handleColorForm} />
                             <TextField fullWidth name='images' label="Images" id="images" sx={{ mt: 2 }} required multiline rows={6} onChange={handleColorForm} />
-                          
+
                             <Grid container spacing={2} sx={{ mt: 2 }}>
-                              <Grid item xs={2} sx={{mr: 6}}>
-                                <Button 
-                                  variant="contained" 
+                              <Grid item xs={2} sx={{ mr: 6 }}>
+                                <Button
+                                  variant="contained"
                                   type='submit'
-                                  endIcon={<SendOutlinedIcon />} 
+                                  endIcon={<SendOutlinedIcon />}
                                   style={{ width: "150px", height: "50px" }}
                                 >
                                   Insert
                                 </Button>
                               </Grid>
                               <Grid item xs={2} container justify="flex-end">
-                                <Button 
+                                <Button
                                   onClick={handleCloseColorModal}
-                                  variant="outlined" 
+                                  variant="outlined"
                                   style={{ width: "150px", height: "50px" }}
                                 >
                                   Cancel
@@ -589,20 +589,20 @@ export default function AddProductPage() {
                     ))}
 
                     <Grid container spacing={2} sx={{ mt: 2 }}>
-                      <Grid item xs={2} sx={{mr: 1}}>
-                        <Button 
+                      <Grid item xs={2} sx={{ mr: 1 }}>
+                        <Button
                           variant="contained"
-                          onClick={() => {handleOpenModalUpdate(row)}}
-                          endIcon={<EditIcon />} 
+                          onClick={() => { handleOpenModalUpdate(row) }}
+                          endIcon={<EditIcon />}
                           style={{ width: "150px", height: "50px", backgroundColor: teal[600] }}
                         >
                           Update
                         </Button>
                       </Grid>
                       <Grid item xs={6} container justify="flex-end">
-                        <Button 
-                          onClick={(e) => {handleDeleteProduct(e, _id)}}
-                          variant="contained" 
+                        <Button
+                          onClick={(e) => { handleDeleteProduct(e, _id) }}
+                          variant="contained"
                           endIcon={<DeleteIcon />}
                           style={{ width: "150px", height: "50px", backgroundColor: red[800] }}
                         >
@@ -680,8 +680,8 @@ const ColorComponent = ({ colorID, onLoadProductColors }) => {
       method: 'DELETE',
     })
     const data = await response.json()
-    
-    if(response.status === 201) {
+
+    if (response.status === 201) {
       navigate('/dashboard/products');
       setColors(prevColors => prevColors.filter(color => color._id !== _id));
       handleCloseDelete();
@@ -696,13 +696,13 @@ const ColorComponent = ({ colorID, onLoadProductColors }) => {
     <div>
       {colors.map((color) => (
         <>
-          <div key={color._id} style={{marginTop: '30px'}}>
-            <div style={{flexGrow: 1, position: 'relative'}}>
-              <p style={{fontWeight: '700'}}>{color.name}</p>
+          <div key={color._id} style={{ marginTop: '30px' }}>
+            <div style={{ flexGrow: 1, position: 'relative' }}>
+              <p style={{ fontWeight: '700' }}>{color.name}</p>
               <TextField fullwidth="true" label="Color" type='color' disabled value={(color.color.toString())} sx={{ mb: 1, width: '100px' }} />
               <Grid container columns={16} display="flex" justifyContent="center" >
                 {color.images.map((item, index) => (
-                  <img src={item} key={index} style={{width: '10%', marginRight: '50px', border: '1px solid #b5b5b5', borderRadius: '10px'}} alt={color.name} />
+                  <img src={item} key={index} style={{ width: '10%', marginRight: '50px', border: '1px solid #b5b5b5', borderRadius: '10px' }} alt={color.name} />
                 ))}
               </Grid>
               <IconButton onClick={handleOpenDelete} aria-label="delete" size="large" sx={{ position: 'absolute', top: 10, right: 0 }}>
@@ -725,7 +725,7 @@ const ColorComponent = ({ colorID, onLoadProductColors }) => {
                 </DialogContent>
                 <DialogActions>
                   <Button onClick={handleCloseDelete}>Disagree</Button>
-                  <Button onClick={() => {handleDeleteColor(colorID, color._id)}} autoFocus>
+                  <Button onClick={() => { handleDeleteColor(colorID, color._id) }} autoFocus>
                     Agree
                   </Button>
                 </DialogActions>
