@@ -1,8 +1,11 @@
 import { Helmet } from 'react-helmet-async';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from "axios";
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert, { AlertProps } from '@mui/material/Alert';
 // @mui
 import {
   Card,
@@ -36,11 +39,14 @@ import {
 } from '@mui/material';
 
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
+import { red, teal } from '@mui/material/colors';import EditIcon from '@mui/icons-material/Edit';
+
+import DeleteIcon from '@mui/icons-material/Delete';
 // components
 import Label from '../components/label';
 import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
-import { URL } from '../utils/constant';
+import { URL, baseURL } from '../utils/constant';
 // sections
 import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
 // mock
@@ -100,6 +106,7 @@ function applySortFilter(array, comparator, query) {
 }
 
 export default function UserPage() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(null);
 
   const [page, setPage] = useState(0);
@@ -112,9 +119,13 @@ export default function UserPage() {
 
   const [filterName, setFilterName] = useState('');
 
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const [openModal, setOpenModal] = useState(false);
+
+  const [openPopup, setOpenPopup] = useState(false);
+  const [severity, setSeverity] = useState('');
+  const [message, setMessage] = useState('');
 
 
   const [form, setForm] = useState({})
@@ -143,16 +154,33 @@ export default function UserPage() {
   const handleCloseModal = () => setOpenModal(false);
 
   const [openModalUpdate, setOpenModalUpdate] = useState(false);
-  const handleOpenModalUpdate = () => setOpenModalUpdate(true);
+  const handleOpenModalUpdate = (row) => {
+    setOpenModalUpdate(true);
+    setSelectedProduct(row);
+  }
   const handleCloseModalUpdate = () => setOpenModalUpdate(false);
 
   const [openDelete, setOpenDelete] = useState(false);
   const handleOpenDelete = () => setOpenDelete(true);
   const handleCloseDelete = () => setOpenDelete(false);
-
+  const [selectedProduct, setSelectedProduct] = useState({});
   const handleOpenMenu = (event) => {
     setOpen(event.currentTarget);
   };
+
+  const [users, setUsers] = useState([]); 
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/auth/v1/user')
+        setUsers(response.data.json);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    fetchAdmin();
+  }, [users])
 
   // #region ui
   const handleCloseMenu = () => {
@@ -167,12 +195,23 @@ export default function UserPage() {
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds = USERLIST.map((n) => n.name);
+      const newSelecteds = users.map((n) => n.name);
       setSelected(newSelecteds);
       return;
     }
     setSelected([]);
   };
+  
+  const Alert = React.forwardRef((props, ref) => (
+    <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
+  ));
+  const handleClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setOpenPopup(false);
+  };
+
 
   const handleClick = (event, name) => {
     const selectedIndex = selected.indexOf(name);
@@ -203,12 +242,58 @@ export default function UserPage() {
     setFilterName(event.target.value);
   };
 
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - USERLIST.length) : 0;
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - users.length) : 0;
 
-  const filteredUsers = applySortFilter(USERLIST, getComparator(order, orderBy), filterName);
+  const filteredUsers = applySortFilter(users, getComparator(order, orderBy), filterName);
 
   const isNotFound = !filteredUsers.length && !!filterName;
   // #endregion
+
+  const handleDeleteAdmin = async (e, _id) => {
+    e.preventDefault();
+    const response = await fetch(`${baseURL}/user/${_id}`, {
+      method: 'DELETE',
+    })
+    const data = await response.json()
+    console.log(data)
+    
+    navigate('/dashboard/user')
+    setOpenPopup(true);
+    setOpen(false);
+    setMessage(data.message);
+    if(response.status === 201) {
+        setSeverity('success')
+    }
+    else {
+        setSeverity('error')
+    }
+  }
+
+  const handleUpdateUser = async (event) => {
+    event.preventDefault()
+    console.log(selectedProduct)
+
+    const response = await fetch(`${baseURL}/user`, {
+      method: 'PUT',
+      body: JSON.stringify(selectedProduct),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await response.json()
+    console.log(data)
+
+    navigate('/dashboard/user')
+    setOpenPopup(true);
+    setOpenModalUpdate(false);
+    setMessage(data.message);
+    if (response.status === 201) {
+      setSeverity('success')
+    }
+    else {
+      setSeverity('error')
+    }
+  }
 
   return (
     <>
@@ -225,6 +310,12 @@ export default function UserPage() {
             New User
           </Button>
         </Stack>
+        {openPopup &&       
+          <Snackbar open={openPopup} autoHideDuration={5000} onClose={handleClose} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+            <Alert severity={severity} sx={{ width: '100%' }}>
+              {message}
+            </Alert>
+          </Snackbar>}
         <Modal
           aria-labelledby="transition-modal-title"
           aria-describedby="transition-modal-description"
@@ -299,30 +390,35 @@ export default function UserPage() {
               <Typography id="transition-modal-description" sx={{ mt: 2 }}>
                 Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
               </Typography>
-              <TextField fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Last Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Email" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Username" id="fullWidth" sx={{ mt: 2 }} />
-              <Grid container spacing={2} sx={{ mt: 2 }}>
-                <Grid item xs={4}>
-                  <Button
-                    variant="contained"
-                    endIcon={<SendOutlinedIcon />}
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Send
-                  </Button>
+              <form onSubmit={handleUpdateUser}>
+                <input type="text" name='id' hidden value={selectedProduct?._id || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} />
+                <TextField name='firstName' value={selectedProduct?.firstName || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="Name" id="fullWidth" sx={{ mt: 2 }} />
+                <TextField name='lastName' value={selectedProduct?.lastName || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="Name" id="fullWidth" sx={{ mt: 2 }} />
+                <TextField name='username' value={selectedProduct?.username || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="Name" id="fullWidth" sx={{ mt: 2 }} />
+                <TextField name='email' value={selectedProduct?.email || ''} onChange={(e) => setSelectedProduct({ ...selectedProduct, [e.target.name]: e.target.value })} fullWidth label="Name" id="fullWidth" sx={{ mt: 2 }} />
+
+                <Grid container spacing={2} sx={{ mt: 2 }}>
+                  <Grid item xs={4}>
+                    <Button
+                      variant="contained"
+                      type='submit'
+                      endIcon={<SendOutlinedIcon />}
+                      style={{ width: "150px", height: "50px" }}
+                    >
+                      Send
+                    </Button>
+                  </Grid>
+                  <Grid item xs={6} container justify="flex-end">
+                    <Button
+                      onClick={handleCloseModalUpdate}
+                      variant="outlined"
+                      style={{ width: "150px", height: "50px" }}
+                    >
+                      Cancel
+                    </Button>
+                  </Grid>
                 </Grid>
-                <Grid item xs={6} container justify="flex-end">
-                  <Button
-                    onClick={handleCloseModalUpdate}
-                    variant="outlined"
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Cancel
-                  </Button>
-                </Grid>
-              </Grid>
+              </form>
             </Box>
           </Fade>
         </Modal>
@@ -360,45 +456,49 @@ export default function UserPage() {
                   order={order}
                   orderBy={orderBy}
                   headLabel={TABLE_HEAD}
-                  rowCount={USERLIST.length}
+                  rowCount={users.length}
                   numSelected={selected.length}
                   onRequestSort={handleRequestSort}
                   onSelectAllClick={handleSelectAllClick}
                 />
                 <TableBody>
                   {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                    const { id, name, role, status, company, avatarUrl, isVerified } = row;
-                    const selectedUser = selected.indexOf(name) !== -1;
+                    const { _id, firstName, lastName, username, email, verify } = row;
+                    const selectedUser = selected.indexOf(firstName) !== -1;
 
                     return (
-                      <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
+                      <TableRow hover key={_id} tabIndex={-1} role="checkbox" selected={selectedUser}>
                         <TableCell padding="checkbox">
-                          <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
+                          <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, firstName)} />
                         </TableCell>
 
-                        <TableCell component="th" scope="row" padding="none">
-                          <Stack direction="row" alignItems="center" spacing={2}>
-                            <Avatar alt={name} src={avatarUrl} />
-                            <Typography variant="subtitle2" noWrap>
-                              {name}
-                            </Typography>
-                          </Stack>
-                        </TableCell>
-
-                        <TableCell align="left">{company}</TableCell>
-
-                        <TableCell align="left">{role}</TableCell>
-
-                        <TableCell align="left">{isVerified ? 'Yes' : 'No'}</TableCell>
+                        <TableCell align="left">{firstName}</TableCell>
+                        <TableCell align="left">{lastName}</TableCell>
+                        <TableCell align="left">{username}</TableCell>
+                        <TableCell align="left">{email}</TableCell>
 
                         <TableCell align="left">
-                          <Label color={(status === 'banned' && 'error') || 'success'}>{sentenceCase(status)}</Label>
+                          <Label color={(verify ? 'success' : 'error')}>{(verify ? 'Active' : 'Unactive')}</Label>
                         </TableCell>
 
-                        <TableCell align="right">
-                          <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
-                            <Iconify icon={'eva:more-vertical-fill'} />
-                          </IconButton>
+                        <TableCell style={{ display:'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <Button 
+                            variant="contained"
+                            onClick={() => handleOpenModalUpdate(row)}
+                            endIcon={<EditIcon />} 
+                            style={{ width: "100px", height: "50px", backgroundColor: teal[600], marginRight: '10px' }}
+                            >
+                              Update
+                            </Button>
+
+                            <Button 
+                            onClick={(e) => {handleDeleteAdmin(e, _id)}}
+                            variant="contained" 
+                            endIcon={<DeleteIcon />}
+                            style={{ width: "100px", height: "50px", backgroundColor: red[800] }}
+                            >
+                                Delete
+                            </Button>
                         </TableCell>
                       </TableRow>
                     );
@@ -440,7 +540,7 @@ export default function UserPage() {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
-            count={USERLIST.length}
+            count={users.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -448,35 +548,6 @@ export default function UserPage() {
           />
         </Card>
       </Container>
-
-      <Popover
-        open={Boolean(open)}
-        anchorEl={open}
-        onClose={handleCloseMenu}
-        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{
-          sx: {
-            p: 1,
-            width: 140,
-            '& .MuiMenuItem-root': {
-              px: 1,
-              typography: 'body2',
-              borderRadius: 0.75,
-            },
-          },
-        }}
-      >
-        <MenuItem onClick={handleOpenModalUpdate}>
-          <Iconify icon={'eva:edit-fill'} sx={{ mr: 2 }} />
-          Edit
-        </MenuItem>
-
-        <MenuItem onClick={handleOpenDelete} sx={{ color: 'error.main' }}>
-          <Iconify icon={'eva:trash-2-outline'} sx={{ mr: 2 }} />
-          Delete
-        </MenuItem>
-      </Popover>
     </>
   );
 }
