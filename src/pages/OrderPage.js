@@ -1,7 +1,8 @@
 import { Helmet } from 'react-helmet-async';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 // @mui
 import {
   Card,
@@ -34,6 +35,10 @@ import {
   DialogTitle
 } from '@mui/material';
 
+import { red, teal } from '@mui/material/colors';
+import EditIcon from '@mui/icons-material/Edit';
+
+import DeleteIcon from '@mui/icons-material/Delete';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 // components
 import Label from '../components/label';
@@ -41,6 +46,7 @@ import Iconify from '../components/iconify';
 import Scrollbar from '../components/scrollbar';
 // sections
 import { UserListHead, UserListToolbar } from '../sections/@dashboard/user';
+
 // mock
 import USERLIST from '../_mock/user';
 
@@ -48,11 +54,15 @@ import USERLIST from '../_mock/user';
 
 const TABLE_HEAD = [
   { id: 'name', label: 'Name', alignRight: false },
-  { id: 'company', label: 'Company', alignRight: false },
-  { id: 'role', label: 'Role', alignRight: false },
-  { id: 'isVerified', label: 'Verified', alignRight: false },
-  { id: 'status', label: 'Status', alignRight: false },
-  { id: '' },
+  { id: 'company', label: 'Telephone', alignRight: false },
+  { id: 'role', label: 'Total Price', alignRight: false },
+  { id: 'isVerified', label: 'Payment', alignRight: false },
+  { id: 'Payment', label: 'Status Payment', alignRight: false },
+  { id: 'Order', label: 'Status Order', alignRight: false },
+  { id: 'status', label: 'Address', alignRight: false },
+  { id: 'Products', label: 'Products', alignRight: false },
+  { id: 'status', label: 'Time', alignRight: false },
+  { id: 'ChangeStatus', label: 'Change Status', alignRight: false },
 ];
 
 const style = {
@@ -100,6 +110,8 @@ function applySortFilter(array, comparator, query) {
 export default function OrderPage() {
   const [open, setOpen] = useState(null);
 
+  const [selectedRow, setSelectedRow] = useState(null);
+
   const [page, setPage] = useState(0);
 
   const [order, setOrder] = useState('asc');
@@ -113,7 +125,10 @@ export default function OrderPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [openModal, setOpenModal] = useState(false);
-  const handleOpenModal = () => setOpenModal(true);
+  const handleOpenModal = (id) => {
+    setSelectedRow(id);
+    setOpenModal(true);
+  }
   const handleCloseModal = () => setOpenModal(false);
 
   const [openModalUpdate, setOpenModalUpdate] = useState(false);
@@ -124,6 +139,9 @@ export default function OrderPage() {
   const handleOpenDelete = () => setOpenDelete(true);
   const handleCloseDelete = () => setOpenDelete(false);
 
+
+  const [orders, setOrders] = useState([])
+
   const handleOpenMenu = (event) => {
     setOpen(event.currentTarget);
   };
@@ -132,15 +150,40 @@ export default function OrderPage() {
     setOpen(null);
   };
 
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/auth/v1/order')
+        setOrders(response.data.json);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchPosts();
+  }, [])
+
+  console.log(orders)
+  console.log(selectedRow);
+
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
     setOrderBy(property);
   };
 
+  const updateOrderStatus = async (userId, orderId, status) => {
+    try {
+      await axios.put(`http://localhost:5000/auth/v1/order/${userId}/${orderId}`, { status });
+
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to update order status:', error);
+    }
+  };
+
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds = USERLIST.map((n) => n.name);
+      const newSelecteds = orders.map((n) => n.name);
       setSelected(newSelecteds);
       return;
     }
@@ -176,9 +219,21 @@ export default function OrderPage() {
     setFilterName(event.target.value);
   };
 
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - USERLIST.length) : 0;
+  const formatCreatedAt = (createdAt) => {
+    const date = new Date(createdAt);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hour = date.getHours().toString().padStart(2, '0');
+    const minute = date.getMinutes().toString().padStart(2, '0');
+    const second = date.getSeconds().toString().padStart(2, '0');
 
-  const filteredUsers = applySortFilter(USERLIST, getComparator(order, orderBy), filterName);
+    return `${day}-${month}-${year} ${hour}:${minute}:${second}`;
+  };
+
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - orders.length) : 0;
+
+  const filteredUsers = applySortFilter(orders, getComparator(order, orderBy), filterName);
 
   const isNotFound = !filteredUsers.length && !!filterName;
 
@@ -188,185 +243,129 @@ export default function OrderPage() {
         <title> User | Minimal UI </title>
       </Helmet>
 
-      <Container>
+      <Container sx={{ display: 'grid', placeContent: 'center', width: '100%' }} maxWidth={false} disableGutters>
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
           <Typography variant="h4" gutterBottom>
-            User
+            Order
           </Typography>
-          <Button variant="contained" onClick={handleOpenModal} startIcon={<Iconify icon="eva:plus-fill" />}>
-            New User
-          </Button>
         </Stack>
-        <Modal
-          aria-labelledby="transition-modal-title"
-          aria-describedby="transition-modal-description"
-          open={openModal}
-          onClose={handleCloseModal}
-          closeAfterTransition
-          slots={{ backdrop: Backdrop }}
-          slotProps={{
-            backdrop: {
-              timeout: 500,
-            },
-          }}
-        >
-          <Fade in={openModal}>
-            <Box sx={style}>
-              <Typography id="transition-modal-title" variant="h3" component="h2">
-                Create new user
-              </Typography>
-              <Typography id="transition-modal-description" sx={{ mt: 2 }}>
-                Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
-              </Typography>
-              <TextField fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Last Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Email" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Username" id="fullWidth" sx={{ mt: 2 }} />
-              <Grid container spacing={2} sx={{ mt: 2 }}>
-                <Grid item xs={4}>
-                  <Button 
-                    variant="contained" 
-                    endIcon={<SendOutlinedIcon />} 
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Send
-                  </Button>
-                </Grid>
-                <Grid item xs={6} container justify="flex-end">
-                  <Button 
-                    onClick={handleCloseModal}
-                    variant="outlined" 
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Cancel
-                  </Button>
-                </Grid>
-              </Grid>
-            </Box>
-          </Fade>
-        </Modal>
-        <Modal
-          aria-labelledby="transition-modal-title"
-          aria-describedby="transition-modal-description"
-          open={openModalUpdate}
-          onClose={handleCloseModalUpdate}
-          closeAfterTransition
-          slots={{ backdrop: Backdrop }}
-          slotProps={{
-            backdrop: {
-              timeout: 500,
-            },
-          }}
-        >
-          <Fade in={openModalUpdate}>
-            <Box sx={style}>
-              <Typography id="transition-modal-title" variant="h3" component="h2">
-                Update user profile
-              </Typography>
-              <Typography id="transition-modal-description" sx={{ mt: 2 }}>
-                Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
-              </Typography>
-              <TextField fullWidth label="First Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Last Name" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Email" id="fullWidth" sx={{ mt: 2 }} />
-              <TextField fullWidth label="Username" id="fullWidth" sx={{ mt: 2 }} />
-              <Grid container spacing={2} sx={{ mt: 2 }}>
-                <Grid item xs={4}>
-                  <Button 
-                    variant="contained" 
-                    endIcon={<SendOutlinedIcon />} 
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Send
-                  </Button>
-                </Grid>
-                <Grid item xs={6} container justify="flex-end">
-                  <Button 
-                    onClick={handleCloseModalUpdate}
-                    variant="outlined" 
-                    style={{ width: "150px", height: "50px" }}
-                  >
-                    Cancel
-                  </Button>
-                </Grid>
-              </Grid>
-            </Box>
-          </Fade>
-        </Modal>
 
-        <Dialog
-          open={openDelete}
-          onClose={handleCloseDelete}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-        >
-          <DialogTitle id="alert-dialog-title">
-            {"Use Google's location service?"}
-          </DialogTitle>
-          <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-              Let Google help apps determine location. This means sending anonymous
-              location data to Google, even when no apps are running.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDelete}>Disagree</Button>
-            <Button onClick={handleCloseDelete} autoFocus>
-              Agree
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        <Card>
+        <Card sx={{ width: '1600px' }}>
           <UserListToolbar numSelected={selected.length} filterName={filterName} onFilterName={handleFilterByName} />
 
           <Scrollbar>
-            <TableContainer sx={{ minWidth: 800 }}>
+            <TableContainer sx={{ minWidth: 600 }}>
               <Table>
                 <UserListHead
                   order={order}
                   orderBy={orderBy}
                   headLabel={TABLE_HEAD}
-                  rowCount={USERLIST.length}
+                  rowCount={orders.length}
                   numSelected={selected.length}
                   onRequestSort={handleRequestSort}
-                  onSelectAllClick={handleSelectAllClick}
                 />
                 <TableBody>
                   {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                    const { id, name, role, status, company, avatarUrl, isVerified } = row;
+                    const { _id, name, totalPrice, phone, address, wards, districts, provinces, payment, statusPayment, products, status, user, createdAt } = row;
                     const selectedUser = selected.indexOf(name) !== -1;
 
                     return (
-                      <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
+                      <TableRow hover key={_id} tabIndex={-1} role="checkbox" selected={selectedUser}>
+
                         <TableCell padding="checkbox">
                           <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
                         </TableCell>
-
                         <TableCell component="th" scope="row" padding="none">
-                          <Stack direction="row" alignItems="center" spacing={2}>
-                            <Avatar alt={name} src={avatarUrl} />
-                            <Typography variant="subtitle2" noWrap>
-                              {name}
-                            </Typography>
-                          </Stack>
+                          <Typography variant="subtitle2" noWrap>
+                            {name}
+                          </Typography>
                         </TableCell>
 
-                        <TableCell align="left">{company}</TableCell>
+                        <TableCell align="left">{phone}</TableCell>
 
-                        <TableCell align="left">{role}</TableCell>
+                        <TableCell align="left">{totalPrice.toLocaleString()}</TableCell>
 
-                        <TableCell align="left">{isVerified ? 'Yes' : 'No'}</TableCell>
+                        <TableCell align="left">{payment}</TableCell>
+
+                        <TableCell align="left">{statusPayment}</TableCell>
 
                         <TableCell align="left">
-                          <Label color={(status === 'banned' && 'error') || 'success'}>{sentenceCase(status)}</Label>
+                          <Label
+                            sx={{
+                              backgroundColor:
+                                (status === 'Failed' && 'error.main') ||
+                                (status === 'Cancelled' && 'error.main') ||
+                                (status === 'Pending' && 'success.main') ||
+                                (status === 'Delivered' && teal[600]) ||
+                                (status === 'Processing' && '#f6d69c') ||
+                                (status === 'Shipped' && '#e2e0e2') ||
+                                'default',
+                              color:
+                                (status === 'Failed' && 'error.contrastText') ||
+                                (status === 'Cancelled' && 'error.contrastText') || 
+                                (status === 'Pending' && 'success.contrastText') ||
+                                (status === 'Delivered' && '#ffffff') ||
+                                (status === 'Processing' && '#c3a161') ||
+                                (status === 'Shipped' && '#3a3a3a') ||
+                                'default',
+                              padding: '6px 12px',
+                              borderRadius: '4px',
+                            }}
+                          >{sentenceCase(status)}</Label>
                         </TableCell>
 
-                        <TableCell align="right">
-                          <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
-                            <Iconify icon={'eva:more-vertical-fill'} />
-                          </IconButton>
+                        <TableCell align="left">{address}-{wards}-{districts}-{provinces}</TableCell>
+
+                        <TableCell align="left" sx={{ width: '20%' }}>
+                          {products.map(({ name, color, quantity }) => (
+                            <div>
+                              {name} - {color} - {quantity}
+                            </div>
+                          ))}
                         </TableCell>
+
+                        <TableCell align="left">{formatCreatedAt(createdAt)}</TableCell>
+
+
+
+                        <TableCell style={{ display: 'block' }}>
+                          <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <Button
+                              variant="contained"
+                              style={{ width: "80px", height: "40px", backgroundColor: teal[600], fontSize: '12px', marginRight: '5px' }}
+                              onClick={() => updateOrderStatus(user, _id, 'Delivered')}
+                            >
+                              Delivered
+                            </Button>
+
+                            <Button
+                              variant="contained"
+                              style={{ width: "80px", height: "40px", backgroundColor: '#f6d69c', fontSize: '12px', color: '#c3a161' }}
+                              onClick={() => updateOrderStatus(user, _id, 'Processing')}
+                            >
+                              Processing
+                            </Button>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '5px' }}>
+                            <Button
+                              variant="contained"
+                              style={{ width: "80px", height: "40px", backgroundColor: '#e2e0e2', fontSize: '12px', color: '#3a3a3a', marginRight: '5px' }}
+                              onClick={() => updateOrderStatus(user, _id, 'Shipped')}
+                            >
+                              Shipped
+                            </Button>
+
+                            <Button
+                              variant="contained"
+                              style={{ width: "80px", height: "40px", backgroundColor: '#e99998', fontSize: '12px', color: '#7d2c2b' }}
+                              onClick={() => updateOrderStatus(user, _id, 'Cancelled')}
+                            >
+                              Cancelled
+                            </Button>
+                          </div>
+                        </TableCell>
+
                       </TableRow>
                     );
                   })}
@@ -407,7 +406,7 @@ export default function OrderPage() {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
-            count={USERLIST.length}
+            count={orders.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}

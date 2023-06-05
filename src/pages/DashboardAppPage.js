@@ -1,7 +1,20 @@
 import { Helmet } from 'react-helmet-async';
-import { faker } from '@faker-js/faker';
+import React, { useState, useEffect, Suspense } from 'react';
+import { Faker } from '@faker-js/faker';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 // @mui
 import { useTheme } from '@mui/material/styles';
+import axios from 'axios';
 import { Grid, Container, Typography } from '@mui/material';
 // components
 import Iconify from '../components/iconify';
@@ -23,6 +36,152 @@ import {
 export default function DashboardAppPage() {
   const theme = useTheme();
 
+  const [orders, setOrders] = useState([])
+  const [revenueByWeek, setRevenueByWeek] = useState({});
+  const [latestWeekRevenue, setLatestWeekRevenue] = useState();
+  const [ordersToday, setOrdersToday] = useState(0);
+  const [bestSellingProduct, setBestSellingProduct] = useState('');
+  const [salesCount, setSalesCount] = useState(0);
+  const [products, setProducts] = useState([]);
+  const [showComponent, setShowComponent] = useState(false);
+
+  
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/auth/v1/order');
+        setOrders(response.data.json);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/auth/v1/products`);
+        setProducts(response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    const calculateRevenueByWeek = () => {
+      const newRevenueByWeek = {};
+      orders.forEach((order) => {
+        const createdAt = new Date(order.createdAt);
+        const weekNumber = getWeekNumber(createdAt);
+        if (!newRevenueByWeek[weekNumber]) {
+          newRevenueByWeek[weekNumber] = 0;
+        }
+        newRevenueByWeek[weekNumber] += order.totalPrice;
+      });
+      setRevenueByWeek(newRevenueByWeek);
+  
+      const weeks = Object.keys(newRevenueByWeek);
+      const latestWeek = Math.max(...weeks.map(Number));
+      const latestWeekRevenue = newRevenueByWeek[latestWeek];
+      setLatestWeekRevenue(latestWeekRevenue); 
+    };
+  
+    const getWeekNumber = (date) => {
+      const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+      const dayOffset = firstDayOfYear.getDay() === 0 ? 1 : 0;
+      const diff = (date - firstDayOfYear) / 86400000;
+      const weekNumber = Math.floor((diff + firstDayOfYear.getDay() - dayOffset) / 7);
+      return weekNumber;
+    };
+  
+    calculateRevenueByWeek();
+  }, [orders]);
+
+  useEffect(() => {
+    const countOrdersToday = () => {
+      const today = new Date(); 
+      const todayOrders = orders.filter((order) => {
+        const orderDate = new Date(order.createdAt);
+        return orderDate.toDateString() === today.toDateString();
+      });
+      setOrdersToday(todayOrders.length);
+    };
+  
+    countOrdersToday();
+  }, [orders]);
+
+  useEffect(() => {
+    const calculateBestSellingProduct = () => {
+      const productSales = {};
+  
+      orders.forEach((order) => {
+        order.products.forEach((product) => {
+          const { name } = product;
+          if (productSales[name]) {
+            productSales[name] += product.quantity;
+          } else {
+            productSales[name] = product.quantity;
+          }
+        });
+      });
+  
+      let bestSellingProduct = '';
+      let maxSales = 0;
+  
+      Object.entries(productSales).forEach(([productName, sales]) => {
+        if (sales > maxSales) {
+          bestSellingProduct = productName;
+          maxSales = sales;
+        }
+      });
+  
+      setBestSellingProduct(bestSellingProduct);
+      setSalesCount(maxSales);
+    };
+  
+    calculateBestSellingProduct();
+  }, [orders]);
+
+
+  const getProductSalesData = (data) => {
+    const productSales = {};
+  
+    data.forEach((item) => {
+      item.products.forEach((product) => {
+        const { name } = product;
+        if (productSales[name]) {
+          productSales[name] += product.quantity;
+        } else {
+          productSales[name] = product.quantity;
+        }
+      });
+    });
+  
+    const salesData = Object.entries(productSales).map(([label, value]) => ({
+      label,
+      value,
+    }));
+  
+    return salesData;
+  };
+  
+  const salesData = getProductSalesData(orders);
+  
   return (
     <>
       <Helmet>
@@ -35,22 +194,44 @@ export default function DashboardAppPage() {
         </Typography>
 
         <Grid container spacing={3}>
+
           <Grid item xs={12} sm={6} md={3}>
-            <AppWidgetSummary title="Weekly Sales" total={714000} icon={'ant-design:android-filled'} />
+            <AppWidgetSummary title="Week Revenue" total={latestWeekRevenue} icon={'ant-design:android-filled'} />
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <AppWidgetSummary title="New Users" total={1352831} color="info" icon={'ant-design:apple-filled'} />
+            <AppWidgetSummary title="Order Today" total={ordersToday} color="info" icon={'ant-design:apple-filled'} />
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <AppWidgetSummary title="Item Orders" total={1723315} color="warning" icon={'ant-design:windows-filled'} />
+            <AppWidgetSummary title={bestSellingProduct} total={salesCount} color="warning" icon={'ant-design:windows-filled'} />
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <AppWidgetSummary title="Bug Reports" total={234} color="error" icon={'ant-design:bug-filled'} />
+            <AppWidgetSummary title="Total products" total={products.length} color="error" icon={'ant-design:bug-filled'} />
           </Grid>
 
+          <Grid item xs={12} md={6} lg={4}>
+            <AppCurrentVisits
+              title="Current Visits"
+              chartData={salesData}
+              chartColors={[
+                theme.palette.primary.main,
+                theme.palette.info.main,
+                theme.palette.warning.main,
+                theme.palette.error.main,
+              ]}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={8}>
+            <AppConversionRates
+              title="Conversion Rates"
+              subheader="(+43%) than last year"
+              chartData={salesData}
+            />
+          </Grid>
+{/* 
           <Grid item xs={12} md={6} lg={8}>
             <AppWebsiteVisits
               title="Website Visits"
@@ -89,45 +270,9 @@ export default function DashboardAppPage() {
                 },
               ]}
             />
-          </Grid>
+          </Grid> */}
 
-          <Grid item xs={12} md={6} lg={4}>
-            <AppCurrentVisits
-              title="Current Visits"
-              chartData={[
-                { label: 'America', value: 4344 },
-                { label: 'Asia', value: 5435 },
-                { label: 'Europe', value: 1443 },
-                { label: 'Africa', value: 4443 },
-              ]}
-              chartColors={[
-                theme.palette.primary.main,
-                theme.palette.info.main,
-                theme.palette.warning.main,
-                theme.palette.error.main,
-              ]}
-            />
-          </Grid>
-
-          <Grid item xs={12} md={6} lg={8}>
-            <AppConversionRates
-              title="Conversion Rates"
-              subheader="(+43%) than last year"
-              chartData={[
-                { label: 'Italy', value: 400 },
-                { label: 'Japan', value: 430 },
-                { label: 'China', value: 448 },
-                { label: 'Canada', value: 470 },
-                { label: 'France', value: 540 },
-                { label: 'Germany', value: 580 },
-                { label: 'South Korea', value: 690 },
-                { label: 'Netherlands', value: 1100 },
-                { label: 'United States', value: 1200 },
-                { label: 'United Kingdom', value: 1380 },
-              ]}
-            />
-          </Grid>
-
+{/*         
           <Grid item xs={12} md={6} lg={4}>
             <AppCurrentSubject
               title="Current Subject"
@@ -212,6 +357,8 @@ export default function DashboardAppPage() {
               ]}
             />
           </Grid>
+           */}
+
         </Grid>
       </Container>
     </>

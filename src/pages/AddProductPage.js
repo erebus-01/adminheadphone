@@ -227,7 +227,6 @@ export default function AddProductPage() {
       }
     })
     const data = await response.json()
-    console.log(data)
 
     navigate('/dashboard/products')
     setOpenPopup(true);
@@ -253,16 +252,22 @@ export default function AddProductPage() {
     };
 
     fetchProducts();
-  }, [products]);
+  }, []);
 
   const loadProductColors = async (productID) => {
     try {
-      const response = await axios.get(`${baseURL}/products/colors/${productID}`);
-      const colors = response.data;
+  
+      const colorsPromises = productID.map(async (id) => {
+        const response = await axios.get(`${baseURL}/products/colors/${id}`);
+        return response.data;
+      });
+  
+      const colors = await Promise.all(colorsPromises);
     } catch (error) {
       console.error(error);
     }
   };
+  
 
 
   const [selectedProduct, setSelectedProduct] = useState({});
@@ -499,7 +504,7 @@ export default function AddProductPage() {
                       </Typography>
                       <Typography sx={{ mt: 1, color: 'text.secondary' }}>{subtitles}</Typography>
                     </div>
-                    <Typography>${price}</Typography>
+                    <Typography>{price.toLocaleString()}{"\u0111"}</Typography>
                   </AccordionSummary>
                   <AccordionDetails>
                     <div>
@@ -573,17 +578,11 @@ export default function AddProductPage() {
                         </Box>
                       </Fade>
                     </Modal>
-                    {colors.map((colorID, index) => {
-                      return (
-                        <>
-                          <ColorComponent
-                            key={_id}
-                            colorID={_id}
-                            onLoadProductColors={loadProductColors}
-                          />
-                        </>
-                      );
-                    })}
+                    <ColorComponent
+                      key={_id}
+                      colorID={_id}
+                      onLoadProductColors={loadProductColors}
+                    />
                     {description.map((item, index) => (
                       <img src={item} key={index} alt={name} loading="lazy" style={{ width: '100%', marginTop: '30px', flexShrink: 0, borderRadius: 10, marginRight: 10 }} />
                     ))}
@@ -658,7 +657,7 @@ const ColorComponent = ({ colorID, onLoadProductColors }) => {
     const fetchColors = async () => {
       try {
         const response = await axios.get(`${baseURL}/products/colors/${colorID}`);
-        const colorData = response.data.json;
+        const colorData = response.data;
         setColors(colorData);
       } catch (error) {
         console.error(`Get error ${error}`);
@@ -670,70 +669,71 @@ const ColorComponent = ({ colorID, onLoadProductColors }) => {
 
   useEffect(() => {
     if (colors && colors.length > 0) {
-      onLoadProductColors(colors.map(color => color.product));
+      onLoadProductColors(colors.map((color) => color.product));
     }
   }, [colors, onLoadProductColors]);
-
 
   const handleDeleteColor = async (productId, _id) => {
     const response = await fetch(`${baseURL}/product/color/${productId}/${_id}`, {
       method: 'DELETE',
-    })
-    const data = await response.json()
+    });
+    const data = await response.json();
 
     if (response.status === 201) {
       navigate('/dashboard/products');
-      setColors(prevColors => prevColors.filter(color => color._id !== _id));
+      setColors((prevColors) => prevColors.filter((color) => color._id !== _id));
       handleCloseDelete();
     }
-  }
-
-  if ((!colors || colors.length === 0)) {
+  };
+  if (colors.length === 0) {
     return <p>Product has no colors.</p>;
   }
 
   return (
     <div>
       {colors.map((color) => (
-        <>
-          <div key={color._id} style={{ marginTop: '30px' }}>
-            <div style={{ flexGrow: 1, position: 'relative' }}>
-              <p style={{ fontWeight: '700' }}>{color.name}</p>
-              <TextField fullwidth="true" label="Color" type='color' disabled value={(color.color.toString())} sx={{ mb: 1, width: '100px' }} />
-              <Grid container columns={16} display="flex" justifyContent="center" >
-                {color.images.map((item, index) => (
-                  <img src={item} key={index} style={{ width: '10%', marginRight: '50px', border: '1px solid #b5b5b5', borderRadius: '10px' }} alt={color.name} />
-                ))}
-              </Grid>
-              <IconButton onClick={handleOpenDelete} aria-label="delete" size="large" sx={{ position: 'absolute', top: 10, right: 0 }}>
-                <DeleteIcon fontSize="inherit" />
-              </IconButton>
-              <Dialog
-                open={openDelete}
-                onClose={handleCloseDelete}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-              >
-                <DialogTitle id="alert-dialog-title">
-                  {"Use Google's location service?"}
-                </DialogTitle>
-                <DialogContent>
-                  <DialogContentText id="alert-dialog-description">
-                    Let Google help apps determine location. This means sending anonymous
-                    location data to Google, even when no apps are running.
-                  </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                  <Button onClick={handleCloseDelete}>Disagree</Button>
-                  <Button onClick={() => { handleDeleteColor(colorID, color._id) }} autoFocus>
-                    Agree
-                  </Button>
-                </DialogActions>
-              </Dialog>
-            </div>
+        <div key={color._id} style={{ marginTop: '30px' }}>
+          <div style={{ flexGrow: 1, position: 'relative' }}>
+            <p style={{ fontWeight: '700' }}>{color.name}</p>
+            <TextField
+              fullwidth="true"
+              label="Color"
+              type="color"
+              disabled
+              value={color.color.toString()}
+              sx={{ mb: 1, width: '100px' }}
+            />
+            <Grid container columns={16} display="flex" justifyContent="center">
+              {color.images.map((item, index) => (
+                <img
+                  src={item}
+                  key={index}
+                  style={{ width: '10%', marginRight: '50px', border: '1px solid #b5b5b5', borderRadius: '10px' }}
+                  alt={color.name}
+                />
+              ))}
+            </Grid>
+            <IconButton onClick={handleOpenDelete} aria-label="delete" size="large" sx={{ position: 'absolute', top: 10, right: 0 }}>
+              <DeleteIcon fontSize="inherit" />
+            </IconButton>
+            <Dialog open={openDelete} onClose={handleCloseDelete} aria-labelledby="alert-dialog-title" aria-describedby="alert-dialog-description">
+              <DialogTitle id="alert-dialog-title">{"Use Google's location service?"}</DialogTitle>
+              <DialogContent>
+                <DialogContentText id="alert-dialog-description">
+                  Let Google help apps determine location. This means sending anonymous location data to Google, even when no apps are running.
+                </DialogContentText>
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={handleCloseDelete}>Disagree</Button>
+                <Button onClick={() => { handleDeleteColor(colorID, color._id) }} autoFocus>
+                  Agree
+                </Button>
+              </DialogActions>
+            </Dialog>
           </div>
-        </>
+        </div>
       ))}
     </div>
   );
 };
+
